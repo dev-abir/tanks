@@ -4,6 +4,7 @@ package main
 import (
 	"math"
 	"math/rand"
+	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
@@ -47,10 +48,12 @@ type EnemyTank struct {
 	rotationAngle float64
 	position      pixel.Vec
 	alive         bool
+	noUpdateTime  float64
+	timer         time.Time
 }
 
-func NewEnemyTank(tankSprite *pixel.Sprite, initialRotationAngle float64, alive bool) EnemyTank {
-	return EnemyTank{tankSprite: tankSprite, rotationAngle: initialRotationAngle, position: pixel.ZV, alive: alive}
+func NewEnemyTank(tankSprite *pixel.Sprite, initialRotationAngle float64, alive bool, noUpdateTime float64) EnemyTank {
+	return EnemyTank{tankSprite: tankSprite, rotationAngle: initialRotationAngle, position: pixel.ZV, alive: alive, noUpdateTime: noUpdateTime, timer: time.Now()}
 }
 
 func SetPositions(enemyTanks []EnemyTank, playerTankBoundingBox pixel.Rect, r *rand.Rand) {
@@ -111,6 +114,10 @@ func (tank EnemyTank) SpinAndShoot(delta float64, r *rand.Rand, playerTankPositi
 		position:      tank.position,
 		rotationAngle: tank.rotationAngle,
 	}
+}
+
+func (tank EnemyTank) WillUpdate() bool {
+	return time.Since(tank.timer).Seconds() >= tank.noUpdateTime
 }
 
 func (tank EnemyTank) Die(delta float64) EnemyTank {

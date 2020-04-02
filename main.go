@@ -29,23 +29,16 @@ const (
 	VSYNC           bool = true
 	SMOOTH_TEXTURES bool = false
 
-	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS int     = 50
-	LEVEL_0_ENEMY_SPAWN_OFF_TIME   float64 = 3.0 // seconds
-	LEVEL_0_ENEMY_TANK_VELOCITY    float64 = PLAYER_TANK_VELOCITY + 10
+	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS         int     = 50
+	LEVEL_0_ENEMY_SPAWN_OFF_TIME           float64 = 3.0 // seconds
+	LEVEL_0_ENEMY_TANK_VELOCITY            float64 = PLAYER_TANK_VELOCITY + 10
+	LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME float64 = 3.0 // seconds
 )
 
 /*
 *
 *
-*
-*
-*
-*
-**
-*
-TODO : No need to do matrix.Scaled(...), if scaling factor is 1, same for matrix.Rotated(..., 1)
-*
-*
+
 TODO : Use batch rendering, it is necessary for specifically a large number of bullets
 *
 *
@@ -92,11 +85,11 @@ func run() {
 	x := r.Intn(LEVEL_0_MAX_NUM_OF_ENEMY_TANKS / 2) // Initially random num.of tanks will be alive(halving it so that the generated random no. is not too much)
 	i := 0
 	for i = 0; i < x; i++ { // first x no.of tanks will be alive
-		enemyTanks[i] = NewEnemyTank(enemyTankSprite, r.Float64()*(2.0*math.Pi), true)
+		enemyTanks[i] = NewEnemyTank(enemyTankSprite, r.Float64()*(2.0*math.Pi), true, r.Float64()*LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME)
 	}
 	lastEnemyTankAlive := i - 1
 	for i = (x - 1); i < len(enemyTanks); i++ { // rest of the tanks will be dead for now...
-		enemyTanks[i] = NewEnemyTank(enemyTankSprite, r.Float64()*(2.0*math.Pi), false)
+		enemyTanks[i] = NewEnemyTank(enemyTankSprite, r.Float64()*(2.0*math.Pi), false, r.Float64()*LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME)
 	}
 
 	SetPositions(enemyTanks, GetBoundingBox(playerTank.position, playerTank.tankSprite), r)
@@ -141,7 +134,6 @@ func run() {
 			playerTankBullets = append(playerTankBullets, playerTank.Shoot())
 		}
 
-		// TODO : ignore bullets, which are out of window
 		for index, _ := range playerTankBullets {
 			for idx, _ := range enemyTanks {
 				enemyTankBoundingBox := GetBoundingBox(enemyTanks[idx].position, enemyTanks[idx].tankSprite)
@@ -187,8 +179,10 @@ func run() {
 		}
 		var bullet Bullet
 		var experimentalEnemyTank EnemyTank
+		//willUpdate := false
 		for index, _ := range enemyTanks {
-			if enemyTanks[index].alive {
+			if enemyTanks[index].alive && enemyTanks[index].WillUpdate() {
+				enemyTanks[index].timer = time.Now()
 				switch r.Intn(2) {
 				case 0:
 					experimentalEnemyTank = enemyTanks[index].MoveInRandomDir(dt, r)
