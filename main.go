@@ -197,7 +197,7 @@ func run() {
 		for index, _ := range playerTankBullets {
 			for idx, _ := range enemyTanks {
 				enemyTankBoundingBox := GetBoundingBox(enemyTanks[idx].position, enemyTanks[idx].tankSprite)
-				bulletNosePosition := playerTankBullets[index].bulletSprite.Frame().Max.Add(playerTankBullets[index].position)
+				bulletNosePosition := GetBulletNosePosition(playerTankBullets[index].position, playerTankBullets[index].bulletSprite)
 				if enemyTankBoundingBox.Contains(bulletNosePosition) {
 					enemyTanks[idx].Die(dt)
 				}

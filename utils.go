@@ -38,3 +38,7 @@ func RemoveElementFromBulletSlice(slice []Bullet, index int) []Bullet {
 	slice[index] = slice[len(slice)-1] // No bounds check = panic(on index out of bounds)
 	return slice[:len(slice)-1]
 }
+
+func GetBulletNosePosition(bulletPostion pixel.Vec, bulletSprite *pixel.Sprite) pixel.Vec {
+	return bulletPostion.Add(pixel.V(bulletSprite.Frame().Max.Scaled(0.5).X, 0.0))
+}
