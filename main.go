@@ -2,7 +2,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -151,8 +150,6 @@ func run() {
 				for index, _ := range enemyTanks {
 					enemyTankBoundingBox := GetBoundingBox(enemyTanks[index].position, enemyTanks[index].tankSprite)
 					if (enemyTanks[index].alive == true) && enemyTankBoundingBox.Intersects(playerTankBoundingBox) {
-						fmt.Println(enemyTankBoundingBox)
-						fmt.Println(playerTankBoundingBox)
 						intersect = true
 						break
 					}

@@ -30,10 +30,7 @@ func HandleFatalError(err error) {
 }
 
 func GetBoundingBox(position pixel.Vec, sprite *pixel.Sprite) pixel.Rect {
-	return pixel.Rect{
-		position,
-		sprite.Frame().Max.Add(position),
-	}
+	return sprite.Frame().Moved(position.Sub(sprite.Frame().Max.Scaled(0.5)))
 }
 
 func RemoveElementFromBulletSlice(slice []Bullet, index int) []Bullet {
