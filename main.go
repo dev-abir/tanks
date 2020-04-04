@@ -118,6 +118,27 @@ func run() {
 			enemyTankSpawnTimer = 0.0
 		}
 
+		//==============UPDATING ENEMY TANKS==============
+		var bullet Bullet
+		var experimentalEnemyTank EnemyTank
+		for index, _ := range enemyTanks {
+			if enemyTanks[index].alive && enemyTanks[index].WillUpdate() {
+				switch r.Intn(2) {
+				case 0:
+					experimentalEnemyTank = enemyTanks[index].MoveInRandomDir(dt, r)
+				case 1:
+					experimentalEnemyTank, bullet = enemyTanks[index].SpinAndShoot(dt, r, playerTank.position)
+					enemyTankBullets = append(enemyTankBullets, bullet)
+				}
+				enemyTanks[index] = experimentalEnemyTank
+			}
+		}
+
+		//==============UPDATING ENEMY TANK BULLETS==============
+		for index, _ := range enemyTankBullets {
+			enemyTankBullets[index].Update(dt)
+		}
+
 		//==============OPTIMIZATON(removing the bullets, which are out of the window)==============
 		// range over slice will not work, as:
 		// for i, _ := range ...{...}, here the maximum value of i is the length of the slice
@@ -167,6 +188,11 @@ func run() {
 			}
 		}
 
+		//==============UPDATING PLAYER TANK BULLETS==============
+		for index, _ := range playerTankBullets {
+			playerTankBullets[index].Update(dt)
+		}
+
 		//==============DESTROYING ENEMY TANKS(by player tank bullets)==============
 		for index, _ := range playerTankBullets {
 			for idx, _ := range enemyTanks {
@@ -180,29 +206,6 @@ func run() {
 
 		// TODO : Update first, or draw first?(most probably update first) + update order
 		//		playerTank.Update()
-		//==============UPDATING PLAYER TANK BULLETS==============
-		for index, _ := range playerTankBullets {
-			playerTankBullets[index].Update(dt)
-		}
-
-		//==============CREATING NEW ENEMY TANK BULLETS AND UPDATING THEM==============
-		var bullet Bullet
-		var experimentalEnemyTank EnemyTank
-		for index, _ := range enemyTanks {
-			if enemyTanks[index].alive && enemyTanks[index].WillUpdate() {
-				switch r.Intn(2) {
-				case 0:
-					experimentalEnemyTank = enemyTanks[index].MoveInRandomDir(dt, r)
-				case 1:
-					experimentalEnemyTank, bullet = enemyTanks[index].SpinAndShoot(dt, r, playerTank.position)
-					enemyTankBullets = append(enemyTankBullets, bullet)
-				}
-				enemyTanks[index] = experimentalEnemyTank
-			}
-		}
-		for index, _ := range enemyTankBullets {
-			enemyTankBullets[index].Update(dt)
-		}
 
 		//==============CLEARING THE SCREEN==============
 		win.Clear(colornames.Bisque)
