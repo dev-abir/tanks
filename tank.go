@@ -10,6 +10,26 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 )
 
+/*
+
+It is not easy, to create this file to follow only one function set.
+Let's say: tank.moveForward(angle float64) -> this seems to be taking the tank pointer, and change it's angle.
+But in my case, it will take a value receiver, change it's angle and return that. ((a tank) func moveForwardangle float64) tank)
+this is because I need to check whether the tank is overlapping with other game objects or not.
+This checking(or rather collision detection) has been done in the main.go file, because that is the central place, where I
+have acces to all game objects, so I have to essentially return a new tank, and not mutate the receiver.
+
+In some cases the function signature makes it very clear that it will mutate, for those cases I have used pointer receivers
+like bullet.Update()
+
+func (tank *EnemyTank) WillUpdate() bool -> this is exceptional, it looks like it's not mutating but it needs to do that
+see it's usage in main.go, there is no better or elegant way of doing it in any other way(maybe)
+
+callbacks need to be pointers, value receivers will 'bind' the function with the receiver. Changing the receiver is not possible.(see player update in main.go)
+
+
+*/
+
 type Bullet struct {
 	bulletSprite  *pixel.Sprite
 	velocity      float64
@@ -116,14 +136,19 @@ func (tank EnemyTank) SpinAndShoot(delta float64, r *rand.Rand, playerTankPositi
 	}
 }
 
-func (tank EnemyTank) WillUpdate() bool {
-	return time.Since(tank.timer).Seconds() >= tank.noUpdateTime
+/*This function seems to be very innocent, not mutating the receiver.
+Actually, it changes the timer of the receiver. Be careful...*/
+func (tank *EnemyTank) WillUpdate() bool {
+	if time.Since(tank.timer).Seconds() >= tank.noUpdateTime {
+		tank.timer = time.Now()
+		return true
+	}
+	return false
 }
 
-func (tank EnemyTank) Die(delta float64) EnemyTank {
+func (tank *EnemyTank) Die(delta float64) {
 	tank.alive = false
 	tank.tankDieAnimation(delta)
-	return tank
 }
 
 func (tank EnemyTank) tankDieAnimation(delta float64) {
@@ -162,7 +187,7 @@ func (tank PlayerTank) Draw(window *pixelgl.Window) {
 	tank.tankSprite.Draw(window, matrix)
 }
 
-func (tank PlayerTank) Shoot() Bullet {
+func (tank *PlayerTank) Shoot() Bullet {
 	picture, err := LoadPicture(BULLET_TEXTURE_PATH)
 	HandleFatalError(err)
 	bulletSprite := pixel.NewSprite(picture, picture.Bounds())
@@ -175,37 +200,37 @@ func (tank PlayerTank) Shoot() Bullet {
 }
 
 func (tank *PlayerTank) RotateClockWise(delta float64) *PlayerTank {
-	result := *tank
-	result.rotationAngle -= TANK_ROTATION_ANGLE * delta
-	return &result
+	result := *tank                                     // making a copy
+	result.rotationAngle -= TANK_ROTATION_ANGLE * delta // mutating that copy
+	return &result                                      // returning pointer to that copy
 }
 
 func (tank *PlayerTank) RotateAntiClockWise(delta float64) *PlayerTank {
-	result := *tank
-	result.rotationAngle += TANK_ROTATION_ANGLE * delta
-	return &result
+	result := *tank                                     // making a copy
+	result.rotationAngle += TANK_ROTATION_ANGLE * delta // mutating that copy
+	return &result                                      // returning pointer to that copy
 }
 
 func (tank *PlayerTank) MoveUp(delta float64) *PlayerTank {
-	result := *tank
-	result.position = result.position.Add(pixel.V(0, (PLAYER_TANK_VELOCITY * delta)))
-	return &result
+	result := *tank                                                                   // making a copy
+	result.position = result.position.Add(pixel.V(0, (PLAYER_TANK_VELOCITY * delta))) // mutating that copy
+	return &result                                                                    // returning pointer to that copy
 }
 
 func (tank *PlayerTank) MoveDown(delta float64) *PlayerTank {
-	result := *tank
-	result.position = result.position.Add(pixel.V(0, -(PLAYER_TANK_VELOCITY * delta)))
-	return &result
+	result := *tank                                                                    // making a copy
+	result.position = result.position.Add(pixel.V(0, -(PLAYER_TANK_VELOCITY * delta))) // mutating that copy
+	return &result                                                                     // returning pointer to that copy
 }
 
 func (tank *PlayerTank) MoveLeft(delta float64) *PlayerTank {
-	result := *tank
-	result.position = result.position.Add(pixel.V(-(PLAYER_TANK_VELOCITY * delta), 0))
-	return &result
+	result := *tank                                                                    // making a copy
+	result.position = result.position.Add(pixel.V(-(PLAYER_TANK_VELOCITY * delta), 0)) // mutating that copy
+	return &result                                                                     // returning pointer to that copy
 }
 
 func (tank *PlayerTank) MoveRight(delta float64) *PlayerTank {
-	result := *tank
-	result.position = result.position.Add(pixel.V((PLAYER_TANK_VELOCITY * delta), 0))
-	return &result
+	result := *tank                                                                   // making a copy
+	result.position = result.position.Add(pixel.V((PLAYER_TANK_VELOCITY * delta), 0)) // mutating that copy
+	return &result                                                                    // returning pointer to that copy
 }
