@@ -6,7 +6,7 @@ A simple tanks war game, written in [GO](https://golang.org/).
 [bullet imge](https://opengameart.org/content/bullet-symbol)
 > - (I forgot from where I got the sound effects, although I remember I used [this](https://opengameart.org) site to get the sound effects)
 > - The resources I used in this project are not original, I have edited some of them
-> - I used the [pixel](https://github.com/faiface/pixel) game engine here.
+> - I used the [go-sdl2](https://godoc.org/github.com/veandco/go-sdl2) library here.
 
 Thanks in advance for contributing to my project :)
 
