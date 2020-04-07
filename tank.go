@@ -94,24 +94,37 @@ func NewEnemyTank(tankTexture *sdl.Texture, width int32, height int32, initialRo
 func SetPositions(enemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) {
 	for index, _ := range enemyTanks {
 		if enemyTanks[index].alive {
-			enemyTanks[index].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[index], enemyTanks[:index], playerTankBoundingBox, r)
+			enemyTanks[index].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[index].boundingBox, enemyTanks[:index], playerTankBoundingBox, r)
 		}
 	}
 }
 
-func GetPositionOfOneEnemyTank(currentEnemyTank EnemyTank, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) sdl.FRect {
-	experimentalBoundingBox := sdl.FRect{
+func GetPositionOfOneEnemyTank(enemyTankBoundingBox sdl.FRect, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) sdl.FRect {
+	experimentalTankBoundingBox := sdl.FRect{
 		X: r.Float32() * float32(SCREEN_WIDTH),
 		Y: r.Float32() * float32(SCREEN_HEIGHT),
-		W: currentEnemyTank.boundingBox.W,
-		H: currentEnemyTank.boundingBox.H,
+		W: enemyTankBoundingBox.W,
+		H: enemyTankBoundingBox.H,
 	}
+	if !ValidPosition(experimentalTankBoundingBox, otherEnemyTanks, playerTankBoundingBox) {
+		return GetPositionOfOneEnemyTank(enemyTankBoundingBox, otherEnemyTanks, playerTankBoundingBox, r)
+	}
+	return experimentalTankBoundingBox
+}
+
+func ValidPosition(experimentalTankBoundingBox sdl.FRect, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect) bool {
 	for idx, _ := range otherEnemyTanks {
-		if otherEnemyTanks[idx].alive && (otherEnemyTanks[idx].boundingBox.HasIntersection(&experimentalBoundingBox) || experimentalBoundingBox.HasIntersection(&playerTankBoundingBox)) {
-			return GetPositionOfOneEnemyTank(currentEnemyTank, otherEnemyTanks, playerTankBoundingBox, r)
+		if otherEnemyTanks[idx].alive &&
+			(otherEnemyTanks[idx].boundingBox.HasIntersection(&experimentalTankBoundingBox) ||
+				experimentalTankBoundingBox.HasIntersection(&playerTankBoundingBox) ||
+				!((experimentalTankBoundingBox.X > 0.0) &&
+					(experimentalTankBoundingBox.Y > 0.0) &&
+					((experimentalTankBoundingBox.X + experimentalTankBoundingBox.W) < float32(SCREEN_WIDTH)) &&
+					((experimentalTankBoundingBox.Y + experimentalTankBoundingBox.H) < float32(SCREEN_HEIGHT)))) {
+			return false
 		}
 	}
-	return experimentalBoundingBox
+	return true
 }
 
 /*func (tank EnemyTank) Update(delta float64, r *rand.Rand, playerTankPosition pixel.Vec) (EnemyTank, Bullet) {
@@ -209,8 +222,8 @@ func (tank *PlayerTank) Shoot(bulletTexture *sdl.Texture, bulletWidth int32, bul
 		bulletTexture: bulletTexture,
 		velocity:      BULLET_VELOCITY,
 		boundingBox: sdl.FRect{
-			X: tank.boundingBox.X,
-			Y: tank.boundingBox.Y,
+			X: (tank.boundingBox.X + tank.boundingBox.X + tank.boundingBox.W) / 2.0, // TODO: NOT WORKING, shooting from the centre of tank
+			Y: (tank.boundingBox.Y + tank.boundingBox.Y + tank.boundingBox.H) / 2.0, // TODO: NOT WORKING, shooting from the centre of tank
 			W: float32(bulletWidth),
 			H: float32(bulletHeight),
 		},

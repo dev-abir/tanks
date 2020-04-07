@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"os"
@@ -65,10 +66,9 @@ func run() int {
 		return ERROR_FAILED_TO_CREATE_WINDOW
 	}
 	defer window.Destroy()
-	//win.SetSmooth(SMOOTH_TEXTURES)
 
 	//==============CREATE RENDERER==============
-	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED| /*|TODO : */ sdl.RENDERER_PRESENTVSYNC)
+	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC)
 	if err != nil {
 		HandleError("Failed to create renderer: ", err)
 		return ERROR_FAILED_TO_CREATE_RENDERER
@@ -77,7 +77,6 @@ func run() int {
 
 	/* TODO:(GIVEN THE SAME vsync FLAGS IN sdl.createrenderer)
 	sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, "1")*/
-	//sdl.SetHint(sdl.HINT_RENDER_VSYNC, "1")
 
 	//==============PLAYER TANK==============
 	playerTankImage, playerTankTexture, errorCode := GetTexture(PLAYER_TANK_TEXTURE_PATH, renderer)
@@ -133,6 +132,8 @@ func run() int {
 
 	last := time.Now() // for calculating dt(delta)
 	var enemyTankSpawnTimer float32 = 0.0
+	fpsCounter := 0
+	var fpsTimer float32 = 0.0
 
 	//==============BULLET==============
 	bulletImage, bulletTexture, errorCode := GetTexture(BULLET_TEXTURE_PATH, renderer)
@@ -150,11 +151,19 @@ func run() int {
 		dt := float32(time.Since(last).Seconds())
 		last = time.Now()
 
+		//==============PRINTING FPS==============
+		fpsTimer += dt
+		if fpsTimer >= 1.0 {
+			fmt.Println("Current FPS: ", fpsCounter)
+			fpsTimer = 0.0
+			fpsCounter = 0
+		}
+
 		//==============SPAWNING NEW ENEMY TANKS==============
 		enemyTankSpawnTimer += dt
 		if (enemyTankSpawnTimer >= LEVEL_0_ENEMY_SPAWN_OFF_TIME) && (lastEnemyTankAlive < len(enemyTanks)) {
 			enemyTanks[lastEnemyTankAlive].alive = true
-			enemyTanks[lastEnemyTankAlive].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[lastEnemyTankAlive], enemyTanks[:lastEnemyTankAlive], playerTank.boundingBox, r)
+			enemyTanks[lastEnemyTankAlive].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[lastEnemyTankAlive].boundingBox, enemyTanks[:lastEnemyTankAlive], playerTank.boundingBox, r)
 			lastEnemyTankAlive += 1
 			enemyTankSpawnTimer = 0.0
 		}
@@ -174,7 +183,9 @@ func run() int {
 					}, bulletTexture, bulletImage.W, bulletImage.H)
 					enemyTankBullets = append(enemyTankBullets, bullet)
 				}
-				enemyTanks[index] = experimentalEnemyTank
+				if ValidPosition(experimentalEnemyTank.boundingBox, enemyTanks[:index], playerTank.boundingBox) {
+					enemyTanks[index] = experimentalEnemyTank
+				}
 			}
 		}
 
@@ -224,10 +235,10 @@ func run() int {
 						}
 						// if no collision with enemy tanks and window
 						if !intersect &&
-							(playerTank.boundingBox.X >= 0.0) &&
-							(playerTank.boundingBox.Y >= 0.0) &&
-							((playerTank.boundingBox.X + playerTank.boundingBox.W) <= float32(SCREEN_WIDTH)) &&
-							((playerTank.boundingBox.Y + playerTank.boundingBox.H) <= float32(SCREEN_HEIGHT)) {
+							(playerTank.boundingBox.X > 0.0) &&
+							(playerTank.boundingBox.Y > 0.0) &&
+							((playerTank.boundingBox.X + playerTank.boundingBox.W) < float32(SCREEN_WIDTH)) &&
+							((playerTank.boundingBox.Y + playerTank.boundingBox.H) < float32(SCREEN_HEIGHT)) {
 							// In the callbacks map, if they were declared like: playerTank.moveDown, where playerTank is an actual value, not a pointer to playerTank, then
 							// the callback functions are 'bound' to that playerTank, with which they were initialized, changing the playerTank will not change the playerTank with
 							// which they were initialized, so I used playerTank as a pointer.
@@ -302,15 +313,22 @@ func run() int {
 				int32(enemyTankBullets[index].boundingBox.W),
 				int32(enemyTankBullets[index].boundingBox.H)}, float64(enemyTankBullets[index].rotationAngle), nil, sdl.FLIP_NONE)
 		}
-
-		/* Just for debugging....
+		/* Just for debugging....*/
 		renderer.SetDrawColor(colornames.Red.R, colornames.Red.G, colornames.Red.B, colornames.Red.A)
-		for idx, _ := range playerTankBullets {
-			renderer.DrawPoint(int32(playerTankBullets[idx].boundingBox.X+playerTankBullets[idx].boundingBox.W),
-				int32(playerTankBullets[idx].boundingBox.Y+(playerTankBullets[idx].boundingBox.H/2.0)))
-		}*/
-
+		for index, _ := range enemyTanks {
+			if enemyTanks[index].alive {
+				renderer.DrawRect(&sdl.Rect{
+					int32(enemyTanks[index].boundingBox.X),
+					int32(enemyTanks[index].boundingBox.Y),
+					int32(enemyTanks[index].boundingBox.W),
+					int32(enemyTanks[index].boundingBox.H),
+				})
+			}
+		}
 		renderer.Present()
+
+		//==============UPDATING FPS COUNTER==============
+		fpsCounter += 1
 	}
 
 	//sdl.Quit()
