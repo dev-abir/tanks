@@ -6,8 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/pixelgl"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 /*
@@ -31,26 +30,30 @@ callbacks need to be pointers, value receivers will 'bind' the function with the
 */
 
 type Bullet struct {
-	bulletSprite  *pixel.Sprite
-	velocity      float64
-	position      pixel.Vec
-	rotationAngle float64
+	bulletTexture *sdl.Texture
+	velocity      float32
+	boundingBox   sdl.FRect
+	rotationAngle float32
 }
 
-func (bullet *Bullet) Update(delta float64) {
-	bullet.position = bullet.position.Add(pixel.V(bullet.velocity*delta*math.Cos(bullet.rotationAngle), bullet.velocity*delta*math.Sin(bullet.rotationAngle)))
+func (bullet *Bullet) Update(delta float32) {
+	bullet.boundingBox.X += bullet.velocity * delta * float32(math.Cos(DegreeToRadian(float64(bullet.rotationAngle))))
+	bullet.boundingBox.Y += bullet.velocity * delta * float32(math.Sin(DegreeToRadian(float64(bullet.rotationAngle))))
 }
 
-func (bullet Bullet) Draw(window *pixelgl.Window) {
+/*func (bullet Bullet) Draw(window *pixelgl.Window) {
 	matrix := pixel.IM
 	matrix = matrix.Moved(bullet.position)
 	// matrix = matrix.Scaled(bullet.position, 1.0) // no need to scale, when scale is 1
 	matrix = matrix.Rotated(bullet.position, bullet.rotationAngle)
 	bullet.bulletSprite.Draw(window, matrix)
-}
+}*/
 
-func (bullet Bullet) OutOfWindow(window *pixelgl.Window) bool {
-	return !window.Bounds().Contains(bullet.position)
+func (bullet Bullet) OutOfWindow() bool {
+	return !((bullet.boundingBox.X >= 0) &&
+		(bullet.boundingBox.Y >= 0) &&
+		((bullet.boundingBox.X + bullet.boundingBox.W) <= float32(SCREEN_WIDTH)) &&
+		((bullet.boundingBox.Y + bullet.boundingBox.H) <= float32(SCREEN_HEIGHT)))
 }
 
 /*
@@ -64,37 +67,51 @@ type Tank interface {
 }*/
 
 type EnemyTank struct {
-	tankSprite    *pixel.Sprite
-	rotationAngle float64
-	position      pixel.Vec
+	tankTexture   *sdl.Texture
+	rotationAngle float32
+	boundingBox   sdl.FRect
 	alive         bool
-	noUpdateTime  float64
+	noUpdateTime  float32
 	timer         time.Time
 }
 
-func NewEnemyTank(tankSprite *pixel.Sprite, initialRotationAngle float64, alive bool, noUpdateTime float64) EnemyTank {
-	return EnemyTank{tankSprite: tankSprite, rotationAngle: initialRotationAngle, position: pixel.ZV, alive: alive, noUpdateTime: noUpdateTime, timer: time.Now()}
+func NewEnemyTank(tankTexture *sdl.Texture, width int32, height int32, initialRotationAngle float32, alive bool, noUpdateTime float32) EnemyTank {
+	return EnemyTank{
+		tankTexture:   tankTexture,
+		rotationAngle: initialRotationAngle,
+		boundingBox: sdl.FRect{
+			X: 0.0,
+			Y: 0.0,
+			W: float32(width),
+			H: float32(height),
+		},
+		alive:        alive,
+		noUpdateTime: noUpdateTime,
+		timer:        time.Now(),
+	}
 }
 
-func SetPositions(enemyTanks []EnemyTank, playerTankBoundingBox pixel.Rect, r *rand.Rand) {
+func SetPositions(enemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) {
 	for index, _ := range enemyTanks {
 		if enemyTanks[index].alive {
-			enemyTanks[index].position = GetPositionOfOneEnemyTank(enemyTanks[index], enemyTanks[:index], playerTankBoundingBox, r)
+			enemyTanks[index].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[index], enemyTanks[:index], playerTankBoundingBox, r)
 		}
 	}
 }
 
-func GetPositionOfOneEnemyTank(currentEnemyTank EnemyTank, otherEnemyTanks []EnemyTank, playerTankBoundingBox pixel.Rect, r *rand.Rand) pixel.Vec {
-	experimentalPosition := pixel.V(r.Float64()*SCREEN_WIDTH, r.Float64()*SCREEN_HEIGHT)
-	currentEnemyTank.position = experimentalPosition
+func GetPositionOfOneEnemyTank(currentEnemyTank EnemyTank, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) sdl.FRect {
+	experimentalBoundingBox := sdl.FRect{
+		X: r.Float32() * float32(SCREEN_WIDTH),
+		Y: r.Float32() * float32(SCREEN_HEIGHT),
+		W: currentEnemyTank.boundingBox.W,
+		H: currentEnemyTank.boundingBox.H,
+	}
 	for idx, _ := range otherEnemyTanks {
-		otherEnemyTankBoundingBox := GetBoundingBox(otherEnemyTanks[idx].position, otherEnemyTanks[idx].tankSprite)
-		currentEnemyTankBoundingBox := GetBoundingBox(currentEnemyTank.position, currentEnemyTank.tankSprite)
-		if (otherEnemyTankBoundingBox.Intersects(currentEnemyTankBoundingBox) || currentEnemyTankBoundingBox.Intersects(playerTankBoundingBox)) && otherEnemyTanks[idx].alive {
+		if otherEnemyTanks[idx].alive && (otherEnemyTanks[idx].boundingBox.HasIntersection(&experimentalBoundingBox) || experimentalBoundingBox.HasIntersection(&playerTankBoundingBox)) {
 			return GetPositionOfOneEnemyTank(currentEnemyTank, otherEnemyTanks, playerTankBoundingBox, r)
 		}
 	}
-	return experimentalPosition
+	return experimentalBoundingBox
 }
 
 /*func (tank EnemyTank) Update(delta float64, r *rand.Rand, playerTankPosition pixel.Vec) (EnemyTank, Bullet) {
@@ -103,35 +120,39 @@ func GetPositionOfOneEnemyTank(currentEnemyTank EnemyTank, otherEnemyTanks []Ene
 	return tank, bullet
 }*/
 
-func (tank EnemyTank) MoveInRandomDir(delta float64, r *rand.Rand) EnemyTank {
+func (tank EnemyTank) MoveInRandomDir(delta float32, r *rand.Rand) EnemyTank {
 	switch r.Intn(4) {
 	case 0:
-		tank.position = tank.position.Add(pixel.V(0, (LEVEL_0_ENEMY_TANK_VELOCITY * delta))) // UP
+		tank.boundingBox.Y += LEVEL_0_ENEMY_TANK_VELOCITY * delta // DOWN
 	case 1:
-		tank.position = tank.position.Add(pixel.V(0, -(LEVEL_0_ENEMY_TANK_VELOCITY * delta))) // DOWN
+		tank.boundingBox.Y -= LEVEL_0_ENEMY_TANK_VELOCITY * delta // UP
 	case 2:
-		tank.position = tank.position.Add(pixel.V(-(LEVEL_0_ENEMY_TANK_VELOCITY * delta), 0)) // LEFT
+		tank.boundingBox.X += LEVEL_0_ENEMY_TANK_VELOCITY * delta // RIGHT
 	case 3:
-		tank.position = tank.position.Add(pixel.V((LEVEL_0_ENEMY_TANK_VELOCITY * delta), 0)) // RIGHT
+		tank.boundingBox.X -= LEVEL_0_ENEMY_TANK_VELOCITY * delta // LEFT
 	}
 	return tank
 }
 
-func (tank EnemyTank) SpinAndShoot(delta float64, r *rand.Rand, playerTankPosition pixel.Vec) (EnemyTank, Bullet) {
-	switch r.Intn(2) {
-	case 0:
-		displacementVector := playerTankPosition.Sub(tank.position) // SHOOT THE PLAYER
-		tank.rotationAngle = displacementVector.Angle()
-	case 1:
-		tank.rotationAngle = r.Float64() * (2.0 * math.Pi) // SHOOT ANYWHERE RANDOMLY
-	}
-	picture, err := LoadPicture(BULLET_TEXTURE_PATH)
-	HandleFatalError(err)
-	bulletSprite := pixel.NewSprite(picture, picture.Bounds())
+func (tank EnemyTank) SpinAndShoot(delta float32, r *rand.Rand, playerTankPosition sdl.FPoint, bulletTexture *sdl.Texture, bulletWidth int32, bulletHeight int32) (EnemyTank, Bullet) {
+	/*
+		TODO :
+		switch r.Intn(2) {
+		case 0:
+			displacementVector := playerTankPosition.Sub(tank.position) // SHOOT THE PLAYER
+			tank.rotationAngle = displacementVector.Angle()
+		case 1:*/
+	tank.rotationAngle = r.Float32() * 360 /*(2.0 * math.Pi)*/ // SHOOT ANYWHERE RANDOMLY
+	/*}*/
 	return tank, Bullet{
-		bulletSprite:  bulletSprite,
+		bulletTexture: bulletTexture,
 		velocity:      BULLET_VELOCITY,
-		position:      tank.position,
+		boundingBox: sdl.FRect{
+			X: tank.boundingBox.X,
+			Y: tank.boundingBox.Y,
+			W: float32(bulletWidth),
+			H: float32(bulletHeight),
+		},
 		rotationAngle: tank.rotationAngle,
 	}
 }
@@ -139,23 +160,23 @@ func (tank EnemyTank) SpinAndShoot(delta float64, r *rand.Rand, playerTankPositi
 /*This function seems to be very innocent, not mutating the receiver.
 Actually, it changes the timer of the receiver. Be careful...*/
 func (tank *EnemyTank) WillUpdate() bool {
-	if time.Since(tank.timer).Seconds() >= tank.noUpdateTime {
+	if time.Since(tank.timer).Seconds() >= float64(tank.noUpdateTime) {
 		tank.timer = time.Now()
 		return true
 	}
 	return false
 }
 
-func (tank *EnemyTank) Die(delta float64) {
+func (tank *EnemyTank) Die(delta float32) {
 	tank.alive = false
 	tank.tankDieAnimation(delta)
 }
 
-func (tank EnemyTank) tankDieAnimation(delta float64) {
+func (tank EnemyTank) tankDieAnimation(delta float32) {
 	// TODO
 }
 
-func (tank EnemyTank) Draw(window *pixelgl.Window) {
+/*func (tank EnemyTank) Draw(window *sdl.Window) {
 	if tank.alive {
 		matrix := pixel.IM
 		matrix = matrix.Moved(tank.position)
@@ -163,74 +184,72 @@ func (tank EnemyTank) Draw(window *pixelgl.Window) {
 		matrix = matrix.Rotated(tank.position, tank.rotationAngle)
 		tank.tankSprite.Draw(window, matrix)
 	}
-}
+}*/
 
 type PlayerTank struct {
-	tankSprite    *pixel.Sprite
-	rotationAngle float64
-	position      pixel.Vec
-}
-
-func NewPlayerTank(tankSprite *pixel.Sprite, initialPosition pixel.Vec) *PlayerTank {
-	return &PlayerTank{tankSprite: tankSprite, position: initialPosition, rotationAngle: 0.0}
+	tankTexture   *sdl.Texture
+	rotationAngle float32
+	boundingBox   sdl.FRect
 }
 
 /*func (tank PlayerTank) Update() PlayerTank {
 	return nil
 }*/
 
-func (tank PlayerTank) Draw(window *pixelgl.Window) {
+/*func (tank PlayerTank) Draw(window *sdl.Window) {
 	matrix := pixel.IM
 	matrix = matrix.Moved(tank.position)
 	// matrix = matrix.Scaled(tank.position, 1.0) // no need to scale, when scale is 1
 	matrix = matrix.Rotated(tank.position, tank.rotationAngle)
 	tank.tankSprite.Draw(window, matrix)
-}
+}*/
 
-func (tank *PlayerTank) Shoot() Bullet {
-	picture, err := LoadPicture(BULLET_TEXTURE_PATH)
-	HandleFatalError(err)
-	bulletSprite := pixel.NewSprite(picture, picture.Bounds())
+func (tank *PlayerTank) Shoot(bulletTexture *sdl.Texture, bulletWidth int32, bulletHeight int32) Bullet {
 	return Bullet{
-		bulletSprite:  bulletSprite,
+		bulletTexture: bulletTexture,
 		velocity:      BULLET_VELOCITY,
-		position:      tank.position,
+		boundingBox: sdl.FRect{
+			X: tank.boundingBox.X,
+			Y: tank.boundingBox.Y,
+			W: float32(bulletWidth),
+			H: float32(bulletHeight),
+		},
 		rotationAngle: tank.rotationAngle,
 	}
 }
 
-func (tank *PlayerTank) RotateClockWise(delta float64) *PlayerTank {
-	result := *tank                                     // making a copy
-	result.rotationAngle -= TANK_ROTATION_ANGLE * delta // mutating that copy
-	return &result                                      // returning pointer to that copy
-}
-
-func (tank *PlayerTank) RotateAntiClockWise(delta float64) *PlayerTank {
+func (tank *PlayerTank) RotateClockWise(delta float32) *PlayerTank {
 	result := *tank                                     // making a copy
 	result.rotationAngle += TANK_ROTATION_ANGLE * delta // mutating that copy
 	return &result                                      // returning pointer to that copy
 }
 
-func (tank *PlayerTank) MoveUp(delta float64) *PlayerTank {
-	result := *tank                                                                   // making a copy
-	result.position = result.position.Add(pixel.V(0, (PLAYER_TANK_VELOCITY * delta))) // mutating that copy
-	return &result                                                                    // returning pointer to that copy
+func (tank *PlayerTank) RotateAntiClockWise(delta float32) *PlayerTank {
+	result := *tank                                     // making a copy
+	result.rotationAngle -= TANK_ROTATION_ANGLE * delta // mutating that copy
+	return &result                                      // returning pointer to that copy
 }
 
-func (tank *PlayerTank) MoveDown(delta float64) *PlayerTank {
-	result := *tank                                                                    // making a copy
-	result.position = result.position.Add(pixel.V(0, -(PLAYER_TANK_VELOCITY * delta))) // mutating that copy
-	return &result                                                                     // returning pointer to that copy
+func (tank *PlayerTank) MoveUp(delta float32) *PlayerTank {
+	result := *tank                                      // making a copy
+	result.boundingBox.Y -= PLAYER_TANK_VELOCITY * delta // mutating that copy
+	return &result                                       // returning pointer to that copy
 }
 
-func (tank *PlayerTank) MoveLeft(delta float64) *PlayerTank {
-	result := *tank                                                                    // making a copy
-	result.position = result.position.Add(pixel.V(-(PLAYER_TANK_VELOCITY * delta), 0)) // mutating that copy
-	return &result                                                                     // returning pointer to that copy
+func (tank *PlayerTank) MoveDown(delta float32) *PlayerTank {
+	result := *tank                                      // making a copy
+	result.boundingBox.Y += PLAYER_TANK_VELOCITY * delta // mutating that copy
+	return &result                                       // returning pointer to that copy
 }
 
-func (tank *PlayerTank) MoveRight(delta float64) *PlayerTank {
-	result := *tank                                                                   // making a copy
-	result.position = result.position.Add(pixel.V((PLAYER_TANK_VELOCITY * delta), 0)) // mutating that copy
-	return &result                                                                    // returning pointer to that copy
+func (tank *PlayerTank) MoveLeft(delta float32) *PlayerTank {
+	result := *tank                                      // making a copy
+	result.boundingBox.X -= PLAYER_TANK_VELOCITY * delta // mutating that copy
+	return &result                                       // returning pointer to that copycopy
+}
+
+func (tank *PlayerTank) MoveRight(delta float32) *PlayerTank {
+	result := *tank                                      // making a copy
+	result.boundingBox.X += PLAYER_TANK_VELOCITY * delta // mutating that copy
+	return &result                                       // returning pointer to that copy                                                                // returning pointer to that copy
 }
