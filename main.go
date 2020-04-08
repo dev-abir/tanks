@@ -37,7 +37,7 @@ const (
 const (
 	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS         int     = 30
 	LEVEL_0_ENEMY_SPAWN_OFF_TIME           float32 = 3.0 // seconds
-	LEVEL_0_ENEMY_TANK_VELOCITY            float32 = PLAYER_TANK_VELOCITY + 10
+	LEVEL_0_ENEMY_TANK_VELOCITY            float32 = 310
 	LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME float32 = 3.0 // seconds
 )
 
@@ -90,8 +90,8 @@ func run() int {
 		tankTexture:   playerTankTexture,
 		rotationAngle: 0.0,
 		boundingBox: sdl.FRect{
-			X: float32(SCREEN_WIDTH) / 2.0,
-			Y: float32(SCREEN_HEIGHT) / 2.0,
+			X: (float32(SCREEN_WIDTH) / 2.0) - (float32(playerTankImage.W) / 2.0),  // positioning exactly at the centre of the screen
+			Y: (float32(SCREEN_HEIGHT) / 2.0) - (float32(playerTankImage.H) / 2.0), // positioning exactly at the centre of the screen
 			W: float32(playerTankImage.W),
 			H: float32(playerTankImage.H),
 		},
@@ -176,15 +176,16 @@ func run() int {
 				switch r.Intn(2) {
 				case 0:
 					experimentalEnemyTank = enemyTanks[index].MoveInRandomDir(dt, r)
+					if ValidPosition(experimentalEnemyTank.boundingBox, enemyTanks, playerTank.boundingBox) {
+						enemyTanks[index].boundingBox = experimentalEnemyTank.boundingBox
+					}
 				case 1:
 					experimentalEnemyTank, bullet = enemyTanks[index].SpinAndShoot(dt, r, sdl.FPoint{
 						X: playerTank.boundingBox.X,
 						Y: playerTank.boundingBox.Y,
 					}, bulletTexture, bulletImage.W, bulletImage.H)
 					enemyTankBullets = append(enemyTankBullets, bullet)
-				}
-				if ValidPosition(experimentalEnemyTank.boundingBox, enemyTanks[:index], playerTank.boundingBox) {
-					enemyTanks[index] = experimentalEnemyTank
+					enemyTanks[index].rotationAngle = experimentalEnemyTank.rotationAngle
 				}
 			}
 		}
@@ -228,17 +229,17 @@ func run() int {
 						experimentalPlayerTank := callbackFunc(dt)
 						// collision detection with enemy tanks and window
 						for index, _ := range enemyTanks {
-							if (enemyTanks[index].alive == true) && enemyTanks[index].boundingBox.HasIntersection(&playerTank.boundingBox) {
+							if (enemyTanks[index].alive == true) && enemyTanks[index].boundingBox.HasIntersection(&experimentalPlayerTank.boundingBox) {
 								intersect = true
 								break
 							}
 						}
 						// if no collision with enemy tanks and window
 						if !intersect &&
-							(playerTank.boundingBox.X > 0.0) &&
-							(playerTank.boundingBox.Y > 0.0) &&
-							((playerTank.boundingBox.X + playerTank.boundingBox.W) < float32(SCREEN_WIDTH)) &&
-							((playerTank.boundingBox.Y + playerTank.boundingBox.H) < float32(SCREEN_HEIGHT)) {
+							(experimentalPlayerTank.boundingBox.X > 0.0) &&
+							(experimentalPlayerTank.boundingBox.Y > 0.0) &&
+							((experimentalPlayerTank.boundingBox.X + experimentalPlayerTank.boundingBox.W) < float32(SCREEN_WIDTH)) &&
+							((experimentalPlayerTank.boundingBox.Y + experimentalPlayerTank.boundingBox.H) < float32(SCREEN_HEIGHT)) {
 							// In the callbacks map, if they were declared like: playerTank.moveDown, where playerTank is an actual value, not a pointer to playerTank, then
 							// the callback functions are 'bound' to that playerTank, with which they were initialized, changing the playerTank will not change the playerTank with
 							// which they were initialized, so I used playerTank as a pointer.
@@ -325,6 +326,12 @@ func run() int {
 				})
 			}
 		}
+		renderer.DrawRect(&sdl.Rect{
+			int32(playerTank.boundingBox.X),
+			int32(playerTank.boundingBox.Y),
+			int32(playerTank.boundingBox.W),
+			int32(playerTank.boundingBox.H),
+		})
 		renderer.Present()
 
 		//==============UPDATING FPS COUNTER==============

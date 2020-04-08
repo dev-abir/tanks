@@ -114,15 +114,16 @@ func GetPositionOfOneEnemyTank(enemyTankBoundingBox sdl.FRect, otherEnemyTanks [
 
 func ValidPosition(experimentalTankBoundingBox sdl.FRect, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect) bool {
 	for idx, _ := range otherEnemyTanks {
-		if otherEnemyTanks[idx].alive &&
-			(otherEnemyTanks[idx].boundingBox.HasIntersection(&experimentalTankBoundingBox) ||
-				experimentalTankBoundingBox.HasIntersection(&playerTankBoundingBox) ||
-				!((experimentalTankBoundingBox.X > 0.0) &&
-					(experimentalTankBoundingBox.Y > 0.0) &&
-					((experimentalTankBoundingBox.X + experimentalTankBoundingBox.W) < float32(SCREEN_WIDTH)) &&
-					((experimentalTankBoundingBox.Y + experimentalTankBoundingBox.H) < float32(SCREEN_HEIGHT)))) {
+		if otherEnemyTanks[idx].alive && experimentalTankBoundingBox.HasIntersection(&otherEnemyTanks[idx].boundingBox) {
 			return false
 		}
+	}
+	if experimentalTankBoundingBox.HasIntersection(&playerTankBoundingBox) ||
+		!((experimentalTankBoundingBox.X > 0.0) &&
+			(experimentalTankBoundingBox.Y > 0.0) &&
+			((experimentalTankBoundingBox.X + experimentalTankBoundingBox.W) < float32(SCREEN_WIDTH)) &&
+			((experimentalTankBoundingBox.Y + experimentalTankBoundingBox.H) < float32(SCREEN_HEIGHT))) {
+		return false
 	}
 	return true
 }
@@ -161,8 +162,10 @@ func (tank EnemyTank) SpinAndShoot(delta float32, r *rand.Rand, playerTankPositi
 		bulletTexture: bulletTexture,
 		velocity:      BULLET_VELOCITY,
 		boundingBox: sdl.FRect{
-			X: tank.boundingBox.X,
-			Y: tank.boundingBox.Y,
+			/*X: tank.boundingBox.X,
+			Y: tank.boundingBox.Y,*/
+			X: tank.boundingBox.X + (tank.boundingBox.W / 2.0) - (float32(bulletWidth) / 2.0),  // shooting from the centre of the tank, and putting the bullet'scentre at the centre of the tank
+			Y: tank.boundingBox.Y + (tank.boundingBox.H / 2.0) - (float32(bulletHeight) / 2.0), // shooting from the centre of the tank, and putting the bullet's centre at the centre of the tank
 			W: float32(bulletWidth),
 			H: float32(bulletHeight),
 		},
@@ -222,8 +225,8 @@ func (tank *PlayerTank) Shoot(bulletTexture *sdl.Texture, bulletWidth int32, bul
 		bulletTexture: bulletTexture,
 		velocity:      BULLET_VELOCITY,
 		boundingBox: sdl.FRect{
-			X: (tank.boundingBox.X + tank.boundingBox.X + tank.boundingBox.W) / 2.0, // TODO: NOT WORKING, shooting from the centre of tank
-			Y: (tank.boundingBox.Y + tank.boundingBox.Y + tank.boundingBox.H) / 2.0, // TODO: NOT WORKING, shooting from the centre of tank
+			X: tank.boundingBox.X + (tank.boundingBox.W / 2.0) - (float32(bulletWidth) / 2.0),  // shooting from the centre of the tank, and putting the bullet'scentre at the centre of the tank
+			Y: tank.boundingBox.Y + (tank.boundingBox.H / 2.0) - (float32(bulletHeight) / 2.0), // shooting from the centre of the tank, and putting the bullet's centre at the centre of the tank
 			W: float32(bulletWidth),
 			H: float32(bulletHeight),
 		},
