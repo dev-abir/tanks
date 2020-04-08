@@ -118,11 +118,7 @@ func ValidPosition(experimentalTankBoundingBox sdl.FRect, otherEnemyTanks []Enem
 			return false
 		}
 	}
-	if experimentalTankBoundingBox.HasIntersection(&playerTankBoundingBox) ||
-		!((experimentalTankBoundingBox.X > 0.0) &&
-			(experimentalTankBoundingBox.Y > 0.0) &&
-			((experimentalTankBoundingBox.X + experimentalTankBoundingBox.W) < float32(SCREEN_WIDTH)) &&
-			((experimentalTankBoundingBox.Y + experimentalTankBoundingBox.H) < float32(SCREEN_HEIGHT))) {
+	if experimentalTankBoundingBox.HasIntersection(&playerTankBoundingBox) || !IsInsideWindow(experimentalTankBoundingBox) {
 		return false
 	}
 	return true

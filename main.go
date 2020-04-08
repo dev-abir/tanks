@@ -38,6 +38,7 @@ const (
 	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS         int     = 30
 	LEVEL_0_ENEMY_SPAWN_OFF_TIME           float32 = 3.0 // seconds
 	LEVEL_0_ENEMY_TANK_VELOCITY            float32 = 310
+	LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME float32 = 1.0 // seconds
 	LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME float32 = 3.0 // seconds
 )
 
@@ -99,14 +100,14 @@ func run() int {
 	var playerTankBullets []Bullet
 
 	//==============CALLBACKS==============
-	callbacks := map[sdl.Keycode]func(delta float32) *PlayerTank{
-		sdl.K_LEFT:  playerTank.RotateAntiClockWise,
-		sdl.K_RIGHT: playerTank.RotateClockWise,
+	callbacks := map[sdl.Scancode]func(delta float32) *PlayerTank{
+		sdl.SCANCODE_LEFT:  playerTank.RotateAntiClockWise,
+		sdl.SCANCODE_RIGHT: playerTank.RotateClockWise,
 
-		sdl.K_w: playerTank.MoveUp,
-		sdl.K_a: playerTank.MoveLeft,
-		sdl.K_s: playerTank.MoveDown,
-		sdl.K_d: playerTank.MoveRight,
+		sdl.SCANCODE_W: playerTank.MoveUp,
+		sdl.SCANCODE_A: playerTank.MoveLeft,
+		sdl.SCANCODE_S: playerTank.MoveDown,
+		sdl.SCANCODE_D: playerTank.MoveRight,
 	}
 
 	//==============ENEMY TANKS==============
@@ -121,11 +122,11 @@ func run() int {
 	x := r.Intn(LEVEL_0_MAX_NUM_OF_ENEMY_TANKS / 2) // Initially random num.of tanks will be alive(halving it so that the generated random no. is not too much)
 	i := 0
 	for i = 0; i < x; i++ { // first x no.of tanks will be alive
-		enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*(2.0*math.Pi), true, r.Float32()*LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME)
+		enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*(2.0*math.Pi), true, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
 	}
 	lastEnemyTankAlive := i - 1
 	for i = (x - 1); i < len(enemyTanks); i++ { // rest of the tanks will be dead for now...
-		enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*(2.0*math.Pi), false, r.Float32()*LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME)
+		enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*(2.0*math.Pi), false, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
 	}
 	SetPositions(enemyTanks, playerTank.boundingBox, r)
 	var enemyTankBullets []Bullet
@@ -144,7 +145,9 @@ func run() int {
 	defer bulletTexture.Destroy()
 
 	//==============MAIN LOOP==============
-	running := true // Main loop flag
+	keyboardState := sdl.GetKeyboardState() // for handling keyboard events
+	running := true                         // Main loop flag
+	shoot := false                          // just a flag, to manage player tank shoot events
 	for running {
 
 		//==============CALCULATING dt(DELTA)==============
@@ -213,42 +216,53 @@ func run() int {
 
 		//==============EVENT HANDLING==============
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch t := event.(type) {
-			case *sdl.QuitEvent:
+			if event.GetType() == sdl.QUIT {
 				running = false
+			}
+			switch t := event.(type) {
 			case *sdl.KeyboardEvent:
-				if t.Keysym.Sym == sdl.K_ESCAPE {
-					running = false
-				}
 				if t.Keysym.Sym == sdl.K_SPACE {
-					playerTankBullets = append(playerTankBullets, playerTank.Shoot(bulletTexture, bulletImage.W, bulletImage.H))
-				}
-				for key, callbackFunc := range callbacks {
-					if t.Keysym.Sym == key {
-						intersect := false
-						experimentalPlayerTank := callbackFunc(dt)
-						// collision detection with enemy tanks and window
-						for index, _ := range enemyTanks {
-							if (enemyTanks[index].alive == true) && enemyTanks[index].boundingBox.HasIntersection(&experimentalPlayerTank.boundingBox) {
-								intersect = true
-								break
-							}
-						}
-						// if no collision with enemy tanks and window
-						if !intersect &&
-							(experimentalPlayerTank.boundingBox.X > 0.0) &&
-							(experimentalPlayerTank.boundingBox.Y > 0.0) &&
-							((experimentalPlayerTank.boundingBox.X + experimentalPlayerTank.boundingBox.W) < float32(SCREEN_WIDTH)) &&
-							((experimentalPlayerTank.boundingBox.Y + experimentalPlayerTank.boundingBox.H) < float32(SCREEN_HEIGHT)) {
-							// In the callbacks map, if they were declared like: playerTank.moveDown, where playerTank is an actual value, not a pointer to playerTank, then
-							// the callback functions are 'bound' to that playerTank, with which they were initialized, changing the playerTank will not change the playerTank with
-							// which they were initialized, so I used playerTank as a pointer.
-
-							// TODO : playerTank = experimentalPlayerTank, will not work, why?
-							playerTank.boundingBox = experimentalPlayerTank.boundingBox
-							playerTank.rotationAngle = experimentalPlayerTank.rotationAngle
-						}
+					if !shoot && (event.GetType() == sdl.KEYDOWN) {
+						shoot = true
 					}
+					if event.GetType() == sdl.KEYUP {
+						shoot = false
+					}
+				}
+			}
+		}
+
+		if shoot {
+			playerTankBullets = append(playerTankBullets, playerTank.Shoot(bulletTexture, bulletImage.W, bulletImage.H))
+			shoot = false
+		}
+
+		// sdl.PumpEvents() // not required
+
+		if keyboardState[sdl.SCANCODE_ESCAPE] == 1 {
+			running = false
+		}
+
+		for key, callbackFunc := range callbacks {
+			if keyboardState[key] == 1 {
+				intersect := false
+				experimentalPlayerTank := callbackFunc(dt)
+				// collision detection with enemy tanks and window
+				for index, _ := range enemyTanks {
+					if (enemyTanks[index].alive == true) && enemyTanks[index].boundingBox.HasIntersection(&experimentalPlayerTank.boundingBox) {
+						intersect = true
+						break
+					}
+				}
+				// if no collision with enemy tanks and window
+				if !intersect && IsInsideWindow(experimentalPlayerTank.boundingBox) {
+					// In the callbacks map, if they were declared like: playerTank.moveDown, where playerTank is an actual value, not a pointer to playerTank, then
+					// the callback functions are 'bound' to that playerTank, with which they were initialized, changing the playerTank will not change the playerTank with
+					// which they were initialized, so I used playerTank as a pointer.
+
+					// TODO : playerTank = experimentalPlayerTank, will not work, why?
+					playerTank.boundingBox = experimentalPlayerTank.boundingBox
+					playerTank.rotationAngle = experimentalPlayerTank.rotationAngle
 				}
 			}
 		}
@@ -314,7 +328,7 @@ func run() int {
 				int32(enemyTankBullets[index].boundingBox.W),
 				int32(enemyTankBullets[index].boundingBox.H)}, float64(enemyTankBullets[index].rotationAngle), nil, sdl.FLIP_NONE)
 		}
-		/* Just for debugging....*/
+		/* Just for debugging....
 		renderer.SetDrawColor(colornames.Red.R, colornames.Red.G, colornames.Red.B, colornames.Red.A)
 		for index, _ := range enemyTanks {
 			if enemyTanks[index].alive {
@@ -331,7 +345,7 @@ func run() int {
 			int32(playerTank.boundingBox.Y),
 			int32(playerTank.boundingBox.W),
 			int32(playerTank.boundingBox.H),
-		})
+		})*/
 		renderer.Present()
 
 		//==============UPDATING FPS COUNTER==============

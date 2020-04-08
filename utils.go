@@ -3,6 +3,7 @@ package main
 
 import (
 	"math"
+	"math/rand"
 
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
@@ -31,4 +32,15 @@ func GetTexture(texturePath string, renderer *sdl.Renderer) (*sdl.Surface, *sdl.
 		return image, nil, ERROR_FAILED_TO_CREATE_TEXTURE_FROM_IMAGE
 	}
 	return image, texture, 0
+}
+
+func GetRandomFloat32(min float32, max float32, r *rand.Rand) float32 {
+	return min + (rand.Float32() * (max - min))
+}
+
+func IsInsideWindow(bounds sdl.FRect) bool {
+	return ((bounds.X > 0.0) &&
+		(bounds.Y > 0.0) &&
+		((bounds.X + bounds.W) < float32(SCREEN_WIDTH)) &&
+		((bounds.Y + bounds.H) < float32(SCREEN_HEIGHT)))
 }
