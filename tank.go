@@ -152,7 +152,7 @@ func (tank EnemyTank) SpinAndShoot(delta float32, r *rand.Rand, playerTankPositi
 			displacementVector := playerTankPosition.Sub(tank.position) // SHOOT THE PLAYER
 			tank.rotationAngle = displacementVector.Angle()
 		case 1:*/
-	tank.rotationAngle = r.Float32() * 360 /*(2.0 * math.Pi)*/ // SHOOT ANYWHERE RANDOMLY
+	tank.rotationAngle = r.Float32() * 360.0 // SHOOT ANYWHERE RANDOMLY
 	/*}*/
 	return tank, Bullet{
 		bulletTexture: bulletTexture,

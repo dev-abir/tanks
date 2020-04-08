@@ -3,7 +3,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"os"
 	"time"
@@ -21,16 +20,30 @@ const (
 	SCREEN_HEIGHT   int32  = 500
 	VSYNC           bool   = true
 	SMOOTH_TEXTURES bool   = false
+)
 
+const (
+	//==============ANTI-ALIASING TYPES==============
+	NEAREST     string = "0"
+	LINEAR      string = "1"
+	ANISOTROPIC string = "2"
+)
+
+const (
 	//==============TEXTURE PATHS==============
 	PLAYER_TANK_TEXTURE_PATH string = "resources/player-tank.png" // Make the textures, to be in same rotation angle
 	ENEMY_TANK_TEXTURE_PATH  string = "resources/enemy-tank.png"  // Make the textures, to be in same rotation angle
 	BULLET_TEXTURE_PATH      string = "resources/bullet_6.png"    // Make the textures, to be in same rotation angle
+)
 
+const (
 	//==============GAMEPLAY==============
 	BULLET_VELOCITY      float32 = 500
 	TANK_ROTATION_ANGLE  float32 = 500 // TODO : Why so low rotation on setting this to 5?(maybe due to delta calculation)
 	PLAYER_TANK_VELOCITY float32 = 300
+
+	//==============SPECIAL FLAGS==============
+	CRAZY_TANKS bool = false // A special flag, toggle it, and enjoy!
 )
 
 //==============LEVEL SETTINGS==============
@@ -69,15 +82,23 @@ func run() int {
 	defer window.Destroy()
 
 	//==============CREATE RENDERER==============
-	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC)
+	var renderer *sdl.Renderer
+	if VSYNC {
+		renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC)
+	} else {
+		renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
+	}
 	if err != nil {
 		HandleError("Failed to create renderer: ", err)
 		return ERROR_FAILED_TO_CREATE_RENDERER
 	}
 	defer renderer.Destroy()
 
-	/* TODO:(GIVEN THE SAME vsync FLAGS IN sdl.createrenderer)
-	sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, "1")*/
+	// sdl.SetHint(sdl.HINT_DEFAULT)
+
+	if SMOOTH_TEXTURES {
+		sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, LINEAR)
+	}
 
 	//==============PLAYER TANK==============
 	playerTankImage, playerTankTexture, errorCode := GetTexture(PLAYER_TANK_TEXTURE_PATH, renderer)
@@ -122,11 +143,19 @@ func run() int {
 	x := r.Intn(LEVEL_0_MAX_NUM_OF_ENEMY_TANKS / 2) // Initially random num.of tanks will be alive(halving it so that the generated random no. is not too much)
 	i := 0
 	for i = 0; i < x; i++ { // first x no.of tanks will be alive
-		enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*(2.0*math.Pi), true, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
+		if CRAZY_TANKS {
+			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, true, GetRandomFloat32(0.0, 0.5, r))
+		} else {
+			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, true, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
+		}
 	}
 	lastEnemyTankAlive := i - 1
 	for i = (x - 1); i < len(enemyTanks); i++ { // rest of the tanks will be dead for now...
-		enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*(2.0*math.Pi), false, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
+		if CRAZY_TANKS {
+			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, false, GetRandomFloat32(0.0, 0.5, r))
+		} else {
+			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, false, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
+		}
 	}
 	SetPositions(enemyTanks, playerTank.boundingBox, r)
 	var enemyTankBullets []Bullet
