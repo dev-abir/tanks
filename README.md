@@ -8,10 +8,10 @@ A simple tanks war game, written in [GO](https://golang.org/).
 > - The resources I used in this project are not original, I have edited some of them
 > - I used the [go-sdl2](https://godoc.org/github.com/veandco/go-sdl2) library here.
 
-Thanks in advance for contributing to my project :)
+Thanks in advance for contributing to my project :relaxed:
 
 ## How to run:
-(I will provide compiled binaries from release 1)
+Grab the latest stable compiled binaries [here](https://github.com/dev-abir/tanks/releases/latest)(click on **Assets**)
 
 ## How to build:
 **I would highly encourage you to understand each and every steps of the build process**
@@ -29,3 +29,10 @@ Almost same as of GNU/Linux, excpet, for the last step, you should use `.\tanks`
 
 ### On macOS:
 I don't use it, BTW, you may contribute the steps....
+
+## Build release:
+- If you want to build release binaries yourself, you may use the `release_script.sh` script to do that.
+- I do the development in a Linux distro, so to run this script, you need to be on a Linux distro.
+- I cross compile to get builds for other OS's. Make sure you have met [these](https://github.com/veandco/go-sdl2#cross-compiling) dependencies.
+- Run `sh release_script.sh` in the root directory of my project, after completition of this command, you will see the release builds, inside the `release` directory.
+- You may also read [this](https://github.com/veandco/go-sdl2#static-compilation) to understand my release script.
