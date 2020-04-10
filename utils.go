@@ -6,6 +6,7 @@ import (
 	"math/rand"
 
 	"github.com/veandco/go-sdl2/img"
+	"github.com/veandco/go-sdl2/mix"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -38,6 +39,20 @@ func GetTexture(texturePath string, renderer *sdl.Renderer) (*sdl.Surface, *sdl.
 		return image, nil, ERROR_FAILED_TO_CREATE_TEXTURE_FROM_IMAGE
 	}
 	return image, texture, 0
+}
+
+func GetSoundEffect(path string) *mix.Chunk {
+	result, err := mix.LoadWAV(path)
+	if err != nil {
+		HandleError("Cannot load "+EXPLOSION_SOUND_PATH+", you may play without it: ", err)
+	}
+	return result
+}
+
+func PlaySoundEffect(soundEffect *mix.Chunk) {
+	if _, err := soundEffect.Play(-1, 0); err != nil {
+		HandleError("Error on playing sound effect: ", err)
+	}
 }
 
 func GetRandomFloat32(min float32, max float32, r *rand.Rand) float32 {

@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/image/colornames"
 
+	"github.com/veandco/go-sdl2/mix"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -34,6 +35,10 @@ const (
 	PLAYER_TANK_TEXTURE_PATH string = "resources/player-tank.png" // Make the textures, to be in same rotation angle
 	ENEMY_TANK_TEXTURE_PATH  string = "resources/enemy-tank.png"  // Make the textures, to be in same rotation angle
 	BULLET_TEXTURE_PATH      string = "resources/bullet_6.png"    // Make the textures, to be in same rotation angle
+
+	//==============SOUND EFFECTS PATHS==============
+	SHOOT_SOUND_PATH     string = "resources/flak_gun_sound.ogg"
+	EXPLOSION_SOUND_PATH string = "resources/bombexplosion.ogg"
 )
 
 const (
@@ -48,7 +53,7 @@ const (
 
 //==============LEVEL SETTINGS==============
 const (
-	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS         int     = 3
+	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS         int     = 30
 	LEVEL_0_ENEMY_SPAWN_OFF_TIME           float32 = 3.0 // seconds
 	LEVEL_0_ENEMY_TANK_VELOCITY            float32 = 310
 	LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME float32 = 1.0 // seconds
@@ -100,6 +105,18 @@ func run() int {
 		sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, LINEAR)
 	}
 
+	//==============SOUND EFFECTS==============
+	if err := mix.OpenAudio(mix.DEFAULT_FREQUENCY, mix.DEFAULT_FORMAT, mix.DEFAULT_CHANNELS, mix.DEFAULT_CHUNKSIZE); err != nil {
+		HandleError("Cannot play audio, you may play without it: ", err)
+	}
+	defer mix.CloseAudio()
+
+	shootSoundEffect := GetSoundEffect(SHOOT_SOUND_PATH)
+	defer shootSoundEffect.Free()
+
+	explosionSoundEffect := GetSoundEffect(EXPLOSION_SOUND_PATH)
+	defer explosionSoundEffect.Free()
+
 	//==============PLAYER TANK==============
 	playerTankImage, playerTankTexture, errorCode := GetTexture(PLAYER_TANK_TEXTURE_PATH, renderer)
 	if errorCode != 0 {
@@ -139,7 +156,7 @@ func run() int {
 	defer enemyTankImage.Free()
 	defer enemyTankTexture.Destroy()
 
-	x := 2 + r.Intn(LEVEL_0_MAX_NUM_OF_ENEMY_TANKS/2) // Initially random num.of tanks will be alive(minimum, 2 tanks should be alive at first, halving it so that the generated random no. is not too much)
+	x := 2 + r.Intn(LEVEL_0_MAX_NUM_OF_ENEMY_TANKS/2) // Initially random num.of tanks will be alive(halving it so that the generated random no. is not too much), let us make at least 2 tanks alive at first
 	enemyTanks := make([]EnemyTank, x)
 	i := 0
 	for i = 0; i < x; i++ { // first x no.of tanks will be alive
@@ -217,6 +234,7 @@ func run() int {
 						Y: playerTank.boundingBox.Y,
 					}, bulletTexture, bulletImage.W, bulletImage.H)
 					enemyTankBullets = append(enemyTankBullets, bullet)
+					PlaySoundEffect(shootSoundEffect)
 					enemyTanks[index].rotationAngle = experimentalEnemyTank.rotationAngle
 				}
 			}
@@ -263,6 +281,7 @@ func run() int {
 
 		if shoot {
 			playerTankBullets = append(playerTankBullets, playerTank.Shoot(bulletTexture, bulletImage.W, bulletImage.H))
+			PlaySoundEffect(shootSoundEffect)
 			shoot = false
 		}
 
@@ -310,6 +329,8 @@ func run() int {
 				}
 				if bulletNosePosition.InRect(&enemyTanks[i].boundingBox) {
 					enemyTanks = RemoveElementFromEnemyTankSlice(enemyTanks, i)
+					PlaySoundEffect(explosionSoundEffect)
+
 				}
 			}
 		}
