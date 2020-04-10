@@ -48,7 +48,7 @@ const (
 
 //==============LEVEL SETTINGS==============
 const (
-	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS         int     = 30
+	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS         int     = 3
 	LEVEL_0_ENEMY_SPAWN_OFF_TIME           float32 = 3.0 // seconds
 	LEVEL_0_ENEMY_TANK_VELOCITY            float32 = 310
 	LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME float32 = 1.0 // seconds
@@ -139,24 +139,19 @@ func run() int {
 	defer enemyTankImage.Free()
 	defer enemyTankTexture.Destroy()
 
-	enemyTanks := make([]EnemyTank, LEVEL_0_MAX_NUM_OF_ENEMY_TANKS)
-	x := 2 + r.Intn(LEVEL_0_MAX_NUM_OF_ENEMY_TANKS / 2) // Initially random num.of tanks will be alive(minimum, 2 tanks should be alive at first, halving it so that the generated random no. is not too much)
+	x := 2 + r.Intn(LEVEL_0_MAX_NUM_OF_ENEMY_TANKS/2) // Initially random num.of tanks will be alive(minimum, 2 tanks should be alive at first, halving it so that the generated random no. is not too much)
+	enemyTanks := make([]EnemyTank, x)
 	i := 0
 	for i = 0; i < x; i++ { // first x no.of tanks will be alive
 		if CRAZY_TANKS {
-			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, true, GetRandomFloat32(0.0, 0.5, r))
+			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, GetRandomFloat32(0.0, 0.5, r))
 		} else {
-			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, true, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
+			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
 		}
 	}
-	lastEnemyTankAliveIndex := i - 1
-	for i = (lastEnemyTankAliveIndex + 1); i < len(enemyTanks); i++ { // rest of the tanks will be dead for now...
-		if CRAZY_TANKS {
-			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, false, GetRandomFloat32(0.0, 0.5, r))
-		} else {
-			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, false, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
-		}
-	}
+
+	numOfEnemyTanksSpawned := x
+
 	SetPositions(enemyTanks, playerTank.boundingBox, r)
 	var enemyTankBullets []Bullet
 
@@ -193,18 +188,23 @@ func run() int {
 
 		//==============SPAWNING NEW ENEMY TANKS==============
 		enemyTankSpawnTimer += dt
-		if (enemyTankSpawnTimer >= LEVEL_0_ENEMY_SPAWN_OFF_TIME) && ((lastEnemyTankAliveIndex + 2) <= len(enemyTanks)) {
-			enemyTanks[lastEnemyTankAliveIndex + 1].alive = true
-			enemyTanks[lastEnemyTankAliveIndex + 1].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[lastEnemyTankAliveIndex].boundingBox, enemyTanks[:lastEnemyTankAliveIndex], playerTank.boundingBox, r)
-			lastEnemyTankAliveIndex += 1
+		if (enemyTankSpawnTimer >= LEVEL_0_ENEMY_SPAWN_OFF_TIME) && (numOfEnemyTanksSpawned < LEVEL_0_MAX_NUM_OF_ENEMY_TANKS) {
+			if CRAZY_TANKS {
+				enemyTanks = append(enemyTanks, NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, GetRandomFloat32(0.0, 0.5, r)))
+			} else {
+				enemyTanks = append(enemyTanks, NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r)))
+			}
+			IndexOfLastEnemyTank := len(enemyTanks) - 1
+			enemyTanks[IndexOfLastEnemyTank].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[IndexOfLastEnemyTank].boundingBox, enemyTanks[:IndexOfLastEnemyTank], playerTank.boundingBox, r)
 			enemyTankSpawnTimer = 0.0
+			numOfEnemyTanksSpawned += 1
 		}
 
 		//==============UPDATING ENEMY TANKS==============
 		var bullet Bullet
 		var experimentalEnemyTank EnemyTank
 		for index, _ := range enemyTanks {
-			if enemyTanks[index].alive && enemyTanks[index].WillUpdate() {
+			if enemyTanks[index].WillUpdate() {
 				switch r.Intn(2) {
 				case 0:
 					experimentalEnemyTank = enemyTanks[index].MoveInRandomDir(dt, r)
@@ -230,7 +230,7 @@ func run() int {
 		//==============OPTIMIZATON(removing the bullets, which are out of the window)==============
 		// range over slice will not work, as:
 		// for i, _ := range ...{...}, here the maximum value of i is the length of the slice
-		// i is initialized with length of the slice, but it doesn't assert new value of that langth, when the length of that slice changes
+		// i is initialized with length of the slice, but it doesn't assert new value of that length, when the length of that slice changes
 		// for i := 0; i < len(...); i++ {...} in this kind of loop the ;len(...); condition is always checked
 		for i := 0; i < len(playerTankBullets); i++ {
 			if playerTankBullets[i].OutOfWindow() {
@@ -278,7 +278,7 @@ func run() int {
 				experimentalPlayerTank := callbackFunc(dt)
 				// collision detection with enemy tanks and window
 				for index, _ := range enemyTanks {
-					if (enemyTanks[index].alive == true) && enemyTanks[index].boundingBox.HasIntersection(&experimentalPlayerTank.boundingBox) {
+					if enemyTanks[index].boundingBox.HasIntersection(&experimentalPlayerTank.boundingBox) {
 						intersect = true
 						break
 					}
@@ -303,13 +303,13 @@ func run() int {
 
 		//==============DESTROYING ENEMY TANKS(by player tank bullets)==============
 		for index, _ := range playerTankBullets {
-			for idx, _ := range enemyTanks {
+			for i := 0; i < len(enemyTanks); i++ {
 				bulletNosePosition := sdl.FPoint{
 					playerTankBullets[index].boundingBox.X + playerTankBullets[index].boundingBox.W,
 					playerTankBullets[index].boundingBox.Y + (playerTankBullets[index].boundingBox.H / 2.0),
 				}
-				if bulletNosePosition.InRect(&enemyTanks[idx].boundingBox) {
-					enemyTanks[idx].Die(dt)
+				if bulletNosePosition.InRect(&enemyTanks[i].boundingBox) {
+					enemyTanks = RemoveElementFromEnemyTankSlice(enemyTanks, i)
 				}
 			}
 		}
@@ -342,13 +342,11 @@ func run() int {
 				int32(playerTankBullets[index].boundingBox.H)}, float64(playerTankBullets[index].rotationAngle), nil, sdl.FLIP_NONE)
 		}
 		for index, _ := range enemyTanks {
-			if enemyTanks[index].alive {
-				renderer.CopyEx(enemyTanks[index].tankTexture, nil, &sdl.Rect{
-					int32(enemyTanks[index].boundingBox.X),
-					int32(enemyTanks[index].boundingBox.Y),
-					int32(enemyTanks[index].boundingBox.W),
-					int32(enemyTanks[index].boundingBox.H)}, float64(enemyTanks[index].rotationAngle), nil, sdl.FLIP_NONE)
-			}
+			renderer.CopyEx(enemyTanks[index].tankTexture, nil, &sdl.Rect{
+				int32(enemyTanks[index].boundingBox.X),
+				int32(enemyTanks[index].boundingBox.Y),
+				int32(enemyTanks[index].boundingBox.W),
+				int32(enemyTanks[index].boundingBox.H)}, float64(enemyTanks[index].rotationAngle), nil, sdl.FLIP_NONE)
 		}
 		for index, _ := range enemyTankBullets {
 			renderer.CopyEx(enemyTankBullets[index].bulletTexture, nil, &sdl.Rect{

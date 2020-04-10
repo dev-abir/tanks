@@ -70,12 +70,11 @@ type EnemyTank struct {
 	tankTexture   *sdl.Texture
 	rotationAngle float32
 	boundingBox   sdl.FRect
-	alive         bool
 	noUpdateTime  float32
 	timer         time.Time
 }
 
-func NewEnemyTank(tankTexture *sdl.Texture, width int32, height int32, initialRotationAngle float32, alive bool, noUpdateTime float32) EnemyTank {
+func NewEnemyTank(tankTexture *sdl.Texture, width int32, height int32, initialRotationAngle float32, noUpdateTime float32) EnemyTank {
 	return EnemyTank{
 		tankTexture:   tankTexture,
 		rotationAngle: initialRotationAngle,
@@ -85,7 +84,6 @@ func NewEnemyTank(tankTexture *sdl.Texture, width int32, height int32, initialRo
 			W: float32(width),
 			H: float32(height),
 		},
-		alive:        alive,
 		noUpdateTime: noUpdateTime,
 		timer:        time.Now(),
 	}
@@ -93,9 +91,7 @@ func NewEnemyTank(tankTexture *sdl.Texture, width int32, height int32, initialRo
 
 func SetPositions(enemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) {
 	for index, _ := range enemyTanks {
-		if enemyTanks[index].alive {
-			enemyTanks[index].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[index].boundingBox, enemyTanks[:index], playerTankBoundingBox, r)
-		}
+		enemyTanks[index].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[index].boundingBox, enemyTanks[:index], playerTankBoundingBox, r)
 	}
 }
 
@@ -114,7 +110,7 @@ func GetPositionOfOneEnemyTank(enemyTankBoundingBox sdl.FRect, otherEnemyTanks [
 
 func ValidPosition(experimentalTankBoundingBox sdl.FRect, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect) bool {
 	for idx, _ := range otherEnemyTanks {
-		if otherEnemyTanks[idx].alive && experimentalTankBoundingBox.HasIntersection(&otherEnemyTanks[idx].boundingBox) {
+		if experimentalTankBoundingBox.HasIntersection(&otherEnemyTanks[idx].boundingBox) {
 			return false
 		}
 	}
@@ -179,10 +175,10 @@ func (tank *EnemyTank) WillUpdate() bool {
 	return false
 }
 
-func (tank *EnemyTank) Die(delta float32) {
-	tank.alive = false
+/*func (tank *EnemyTank) Die(delta float32) {
+	RemoveElementFromEnemyTankSlice(tank)
 	tank.tankDieAnimation(delta)
-}
+}*/
 
 func (tank EnemyTank) tankDieAnimation(delta float32) {
 	// TODO

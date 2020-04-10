@@ -15,6 +15,12 @@ func RemoveElementFromBulletSlice(slice []Bullet, index int) []Bullet {
 	return slice[:len(slice)-1]
 }
 
+func RemoveElementFromEnemyTankSlice(slice []EnemyTank, index int) []EnemyTank {
+	// TODO : How to make it generic, i.e., it can remove an element from a slice of any kind
+	slice[index] = slice[len(slice)-1] // No bounds check = panic(on index out of bounds)
+	return slice[:len(slice)-1]
+}
+
 func DegreeToRadian(angleInDegree float64) float64 {
 	return angleInDegree * (math.Pi / 180.0)
 }
