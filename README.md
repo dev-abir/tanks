@@ -10,8 +10,26 @@ A simple tanks war game, written in [GO](https://golang.org/).
 
 Thanks in advance for contributing to my project :relaxed:
 
+## The game:
+There will be a player tank(the green tank), and lots of enemy tanks(the red tanks).
+The enemy tanks will either try to shoot the player or else shoot at a random direction.
+The player will win, if it kills all the enemy tanks by shooting them.
+If any of the enemy tanks shoot and kills the player tank, the player loses.
+At first there will be a minumum number of enemy tanks, which will increase slowly...
+
 ## How to run:
-Grab the latest stable compiled binaries [here](https://github.com/dev-abir/tanks/releases/latest)(click on **Assets**)
+Grab the latest stable compiled binaries [here](https://github.com/dev-abir/tanks/releases/latest)(scroll down, and check the **Assets**)
+
+## Controls:
+Press `w` to move the player tank(the green tank) forward(or up).
+Press `a` to move the player tank(the green tank) left.
+Press `s` to move the player tank(the green tank) backward(or down).
+Press `d` to move the player tank(the green tank) right.
+
+Press `LEFT ARROW` to rotate the player tank(the green tank) anti-clockwise.
+Press `LEFT ARROW` to rotate the player tank(the green tank) clockwise.
+
+Press `SPACE` to shoot.
 
 ## How to build:
 **I would highly encourage you to understand each and every steps of the build process**
