@@ -140,7 +140,7 @@ func run() int {
 	defer enemyTankTexture.Destroy()
 
 	enemyTanks := make([]EnemyTank, LEVEL_0_MAX_NUM_OF_ENEMY_TANKS)
-	x := r.Intn(LEVEL_0_MAX_NUM_OF_ENEMY_TANKS / 2) // Initially random num.of tanks will be alive(halving it so that the generated random no. is not too much)
+	x := 2 + r.Intn(LEVEL_0_MAX_NUM_OF_ENEMY_TANKS / 2) // Initially random num.of tanks will be alive(minimum, 2 tanks should be alive at first, halving it so that the generated random no. is not too much)
 	i := 0
 	for i = 0; i < x; i++ { // first x no.of tanks will be alive
 		if CRAZY_TANKS {
@@ -149,8 +149,8 @@ func run() int {
 			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, true, GetRandomFloat32(LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME, LEVEL_0_ENEMY_TANK_MAX_NO_UPDATES_TIME, r))
 		}
 	}
-	lastEnemyTankAlive := i - 1
-	for i = (x - 1); i < len(enemyTanks); i++ { // rest of the tanks will be dead for now...
+	lastEnemyTankAliveIndex := i - 1
+	for i = (lastEnemyTankAliveIndex + 1); i < len(enemyTanks); i++ { // rest of the tanks will be dead for now...
 		if CRAZY_TANKS {
 			enemyTanks[i] = NewEnemyTank(enemyTankTexture, enemyTankImage.W, enemyTankImage.H, r.Float32()*360.0, false, GetRandomFloat32(0.0, 0.5, r))
 		} else {
@@ -193,10 +193,10 @@ func run() int {
 
 		//==============SPAWNING NEW ENEMY TANKS==============
 		enemyTankSpawnTimer += dt
-		if (enemyTankSpawnTimer >= LEVEL_0_ENEMY_SPAWN_OFF_TIME) && (lastEnemyTankAlive < len(enemyTanks)) {
-			enemyTanks[lastEnemyTankAlive].alive = true
-			enemyTanks[lastEnemyTankAlive].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[lastEnemyTankAlive].boundingBox, enemyTanks[:lastEnemyTankAlive], playerTank.boundingBox, r)
-			lastEnemyTankAlive += 1
+		if (enemyTankSpawnTimer >= LEVEL_0_ENEMY_SPAWN_OFF_TIME) && ((lastEnemyTankAliveIndex + 2) <= len(enemyTanks)) {
+			enemyTanks[lastEnemyTankAliveIndex + 1].alive = true
+			enemyTanks[lastEnemyTankAliveIndex + 1].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[lastEnemyTankAliveIndex].boundingBox, enemyTanks[:lastEnemyTankAliveIndex], playerTank.boundingBox, r)
+			lastEnemyTankAliveIndex += 1
 			enemyTankSpawnTimer = 0.0
 		}
 
