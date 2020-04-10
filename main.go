@@ -53,7 +53,7 @@ const (
 
 //==============LEVEL SETTINGS==============
 const (
-	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS         int     = 30
+	LEVEL_0_MAX_NUM_OF_ENEMY_TANKS         int     = 10
 	LEVEL_0_ENEMY_SPAWN_OFF_TIME           float32 = 3.0 // seconds
 	LEVEL_0_ENEMY_TANK_VELOCITY            float32 = 310
 	LEVEL_0_ENEMY_TANK_MIN_NO_UPDATES_TIME float32 = 1.0 // seconds
@@ -188,7 +188,7 @@ func run() int {
 	//==============MAIN LOOP==============
 	keyboardState := sdl.GetKeyboardState() // for handling keyboard events
 	running := true                         // Main loop flag
-	shoot := false                          // just a flag, to manage player tank shoot events
+	playerShootedInLastFrame := false       // just a flag, to manage player tank shoot events(it ensures that the player tank will not shoot continuously, on pressing down 'space')
 	for running {
 
 		//==============CALCULATING dt(DELTA)==============
@@ -201,6 +201,15 @@ func run() int {
 			fmt.Println("Current FPS: ", fpsCounter)
 			fpsTimer = 0.0
 			fpsCounter = 0
+		}
+
+		//==============CHECKING WHETHER PLAYER HAS WON==============
+		if (len(enemyTanks) == 0) /*if all the tanks has been destroyed by the player, and*/ &&
+			(numOfEnemyTanksSpawned == LEVEL_0_MAX_NUM_OF_ENEMY_TANKS) /*if all the tanks has been spawned*/ {
+			// TODO: Render text, instead of printing inside the console
+			fmt.Println("==============PLAYER WON==============")
+			sdl.Delay(1000)
+			break
 		}
 
 		//==============SPAWNING NEW ENEMY TANKS==============
@@ -269,21 +278,26 @@ func run() int {
 			switch t := event.(type) {
 			case *sdl.KeyboardEvent:
 				if t.Keysym.Sym == sdl.K_SPACE {
-					if !shoot && (event.GetType() == sdl.KEYDOWN) {
-						shoot = true
+					if event.GetType() == sdl.KEYDOWN {
+						if !playerShootedInLastFrame {
+							playerTankBullets = append(playerTankBullets, playerTank.Shoot(bulletTexture, bulletImage.W, bulletImage.H))
+							PlaySoundEffect(shootSoundEffect)
+							playerShootedInLastFrame = true
+						}
 					}
 					if event.GetType() == sdl.KEYUP {
-						shoot = false
+						playerShootedInLastFrame = false
 					}
 				}
 			}
 		}
 
-		if shoot {
+		/*if shoot && !playerShootedInLastFrame {
 			playerTankBullets = append(playerTankBullets, playerTank.Shoot(bulletTexture, bulletImage.W, bulletImage.H))
 			PlaySoundEffect(shootSoundEffect)
 			shoot = false
-		}
+			playerShootedInLastFrame = true
+		}*/
 
 		// sdl.PumpEvents() // not required
 
