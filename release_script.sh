@@ -1,6 +1,9 @@
 
-VERSION="0.1.0"
 
+VERSION=$1 #The first argument should be the version script
+
+#=====================PRINTING THE BUILD SETTINGS=====================
+echo "[INFO] Build setting(VERSION):" $VERSION
 
 #=====================BUILDING(STATIC LINKING)=====================
 echo "[INFO] building..."
