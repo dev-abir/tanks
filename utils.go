@@ -59,6 +59,51 @@ func GetRandomFloat32(min float32, max float32, r *rand.Rand) float32 {
 	return min + (rand.Float32() * (max - min))
 }
 
+func DrawTexture(renderer *sdl.Renderer, texture *sdl.Texture, boundingBox *sdl.FRect, rotationAngle float32) {
+	/*
+
+		TODO : For some reason CopyExF is not working.......
+
+	*/
+
+	renderer.CopyEx(texture, nil, &sdl.Rect{
+		int32(boundingBox.X),
+		int32(boundingBox.Y),
+		int32(boundingBox.W),
+		int32(boundingBox.H)}, float64(rotationAngle), nil, sdl.FLIP_NONE)
+}
+
+func SetPositionOfEnemyTanks(enemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) {
+	for index, _ := range enemyTanks {
+		enemyTanks[index].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[index].boundingBox, enemyTanks[:index], playerTankBoundingBox, r)
+	}
+}
+
+func GetPositionOfOneEnemyTank(enemyTankBoundingBox sdl.FRect, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) sdl.FRect {
+	experimentalTankBoundingBox := sdl.FRect{
+		X: r.Float32() * float32(SCREEN_WIDTH),
+		Y: r.Float32() * float32(SCREEN_HEIGHT),
+		W: enemyTankBoundingBox.W,
+		H: enemyTankBoundingBox.H,
+	}
+	if !ValidPosition(experimentalTankBoundingBox, otherEnemyTanks, playerTankBoundingBox) {
+		return GetPositionOfOneEnemyTank(enemyTankBoundingBox, otherEnemyTanks, playerTankBoundingBox, r)
+	}
+	return experimentalTankBoundingBox
+}
+
+func ValidPosition(experimentalTankBoundingBox sdl.FRect, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect) bool {
+	for idx, _ := range otherEnemyTanks {
+		if experimentalTankBoundingBox.HasIntersection(&otherEnemyTanks[idx].boundingBox) {
+			return false
+		}
+	}
+	if experimentalTankBoundingBox.HasIntersection(&playerTankBoundingBox) || !IsInsideWindow(experimentalTankBoundingBox) {
+		return false
+	}
+	return true
+}
+
 func IsInsideWindow(bounds sdl.FRect) bool {
 	return ((bounds.X > 0.0) &&
 		(bounds.Y > 0.0) &&

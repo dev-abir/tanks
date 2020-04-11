@@ -29,6 +29,10 @@ callbacks need to be pointers, value receivers will 'bind' the function with the
 
 */
 
+type Drawable interface {
+	Draw(renderer *sdl.Renderer)
+}
+
 type Bullet struct {
 	bulletTexture *sdl.Texture
 	velocity      float32
@@ -40,31 +44,6 @@ func (bullet *Bullet) Update(delta float32) {
 	bullet.boundingBox.X += bullet.velocity * delta * float32(math.Cos(DegreeToRadian(float64(bullet.rotationAngle))))
 	bullet.boundingBox.Y += bullet.velocity * delta * float32(math.Sin(DegreeToRadian(float64(bullet.rotationAngle))))
 }
-
-/*func (bullet Bullet) Draw(window *pixelgl.Window) {
-	matrix := pixel.IM
-	matrix = matrix.Moved(bullet.position)
-	// matrix = matrix.Scaled(bullet.position, 1.0) // no need to scale, when scale is 1
-	matrix = matrix.Rotated(bullet.position, bullet.rotationAngle)
-	bullet.bulletSprite.Draw(window, matrix)
-}*/
-
-func (bullet Bullet) OutOfWindow() bool {
-	return !((bullet.boundingBox.X >= 0) &&
-		(bullet.boundingBox.Y >= 0) &&
-		((bullet.boundingBox.X + bullet.boundingBox.W) <= float32(SCREEN_WIDTH)) &&
-		((bullet.boundingBox.Y + bullet.boundingBox.H) <= float32(SCREEN_HEIGHT)))
-}
-
-/*
-Almost same as the Bullet struct, it is also inheriting this interface...
-Even if I define it, I will not use it most probably
-
-type Tank interface {
-	// Init()
-	Update()
-	Draw(window *pixelgl.Window)
-}*/
 
 type EnemyTank struct {
 	tankTexture   *sdl.Texture
@@ -87,37 +66,6 @@ func NewEnemyTank(tankTexture *sdl.Texture, width int32, height int32, initialRo
 		noUpdateTime: noUpdateTime,
 		timer:        time.Now(),
 	}
-}
-
-func SetPositions(enemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) {
-	for index, _ := range enemyTanks {
-		enemyTanks[index].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[index].boundingBox, enemyTanks[:index], playerTankBoundingBox, r)
-	}
-}
-
-func GetPositionOfOneEnemyTank(enemyTankBoundingBox sdl.FRect, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) sdl.FRect {
-	experimentalTankBoundingBox := sdl.FRect{
-		X: r.Float32() * float32(SCREEN_WIDTH),
-		Y: r.Float32() * float32(SCREEN_HEIGHT),
-		W: enemyTankBoundingBox.W,
-		H: enemyTankBoundingBox.H,
-	}
-	if !ValidPosition(experimentalTankBoundingBox, otherEnemyTanks, playerTankBoundingBox) {
-		return GetPositionOfOneEnemyTank(enemyTankBoundingBox, otherEnemyTanks, playerTankBoundingBox, r)
-	}
-	return experimentalTankBoundingBox
-}
-
-func ValidPosition(experimentalTankBoundingBox sdl.FRect, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect) bool {
-	for idx, _ := range otherEnemyTanks {
-		if experimentalTankBoundingBox.HasIntersection(&otherEnemyTanks[idx].boundingBox) {
-			return false
-		}
-	}
-	if experimentalTankBoundingBox.HasIntersection(&playerTankBoundingBox) || !IsInsideWindow(experimentalTankBoundingBox) {
-		return false
-	}
-	return true
 }
 
 /*func (tank EnemyTank) Update(delta float64, r *rand.Rand, playerTankPosition pixel.Vec) (EnemyTank, Bullet) {
@@ -204,14 +152,6 @@ type PlayerTank struct {
 	return nil
 }*/
 
-/*func (tank PlayerTank) Draw(window *sdl.Window) {
-	matrix := pixel.IM
-	matrix = matrix.Moved(tank.position)
-	// matrix = matrix.Scaled(tank.position, 1.0) // no need to scale, when scale is 1
-	matrix = matrix.Rotated(tank.position, tank.rotationAngle)
-	tank.tankSprite.Draw(window, matrix)
-}*/
-
 func (tank *PlayerTank) Shoot(bulletTexture *sdl.Texture, bulletWidth int32, bulletHeight int32) Bullet {
 	return Bullet{
 		bulletTexture: bulletTexture,
@@ -253,11 +193,11 @@ func (tank *PlayerTank) MoveDown(delta float32) *PlayerTank {
 func (tank *PlayerTank) MoveLeft(delta float32) *PlayerTank {
 	result := *tank                                      // making a copy
 	result.boundingBox.X -= PLAYER_TANK_VELOCITY * delta // mutating that copy
-	return &result                                       // returning pointer to that copycopy
+	return &result                                       // returning pointer to that copy
 }
 
 func (tank *PlayerTank) MoveRight(delta float32) *PlayerTank {
 	result := *tank                                      // making a copy
 	result.boundingBox.X += PLAYER_TANK_VELOCITY * delta // mutating that copy
-	return &result                                       // returning pointer to that copy                                                                // returning pointer to that copy
+	return &result                                       // returning pointer to that copy
 }

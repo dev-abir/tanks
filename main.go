@@ -1,4 +1,4 @@
-// test.go
+// main.go
 package main
 
 import (
@@ -169,7 +169,7 @@ func run() int {
 
 	numOfEnemyTanksSpawned := x
 
-	SetPositions(enemyTanks, playerTank.boundingBox, r)
+	SetPositionOfEnemyTanks(enemyTanks, playerTank.boundingBox, r)
 	var enemyTankBullets []Bullet
 
 	last := time.Now() // for calculating dt(delta)
@@ -260,12 +260,12 @@ func run() int {
 		// i is initialized with length of the slice, but it doesn't assert new value of that length, when the length of that slice changes
 		// for i := 0; i < len(...); i++ {...} in this kind of loop the ;len(...); condition is always checked
 		for i := 0; i < len(playerTankBullets); i++ {
-			if playerTankBullets[i].OutOfWindow() {
+			if !IsInsideWindow(playerTankBullets[i].boundingBox) {
 				playerTankBullets = RemoveElementFromBulletSlice(playerTankBullets, i)
 			}
 		}
 		for i := 0; i < len(enemyTankBullets); i++ {
-			if enemyTankBullets[i].OutOfWindow() {
+			if !IsInsideWindow(enemyTankBullets[i].boundingBox) {
 				enemyTankBullets = RemoveElementFromBulletSlice(enemyTankBullets, i)
 			}
 		}
@@ -291,13 +291,6 @@ func run() int {
 				}
 			}
 		}
-
-		/*if shoot && !playerShootedInLastFrame {
-			playerTankBullets = append(playerTankBullets, playerTank.Shoot(bulletTexture, bulletImage.W, bulletImage.H))
-			PlaySoundEffect(shootSoundEffect)
-			shoot = false
-			playerShootedInLastFrame = true
-		}*/
 
 		// sdl.PumpEvents() // not required
 
@@ -357,57 +350,16 @@ func run() int {
 		renderer.Clear()
 
 		//==============DRAWING==============
-		//renderer.CopyExF(playerTank.tankTexture, nil, &playerTank.boundingBox, float64(playerTank.rotationAngle), nil, sdl.FLIP_NONE)
-		/*
-
-			TODO : For some reason CopyExF is not working.......
-
-		*/
-
-		renderer.CopyEx(playerTank.tankTexture, nil, &sdl.Rect{
-			int32(playerTank.boundingBox.X),
-			int32(playerTank.boundingBox.Y),
-			int32(playerTank.boundingBox.W),
-			int32(playerTank.boundingBox.H)}, float64(playerTank.rotationAngle), nil, sdl.FLIP_NONE)
+		DrawTexture(renderer, playerTank.tankTexture, &playerTank.boundingBox, playerTank.rotationAngle)
 		for index, _ := range playerTankBullets {
-			renderer.CopyEx(playerTankBullets[index].bulletTexture, nil, &sdl.Rect{
-				int32(playerTankBullets[index].boundingBox.X),
-				int32(playerTankBullets[index].boundingBox.Y),
-				int32(playerTankBullets[index].boundingBox.W),
-				int32(playerTankBullets[index].boundingBox.H)}, float64(playerTankBullets[index].rotationAngle), nil, sdl.FLIP_NONE)
+			DrawTexture(renderer, playerTankBullets[index].bulletTexture, &playerTankBullets[index].boundingBox, playerTankBullets[index].rotationAngle)
 		}
 		for index, _ := range enemyTanks {
-			renderer.CopyEx(enemyTanks[index].tankTexture, nil, &sdl.Rect{
-				int32(enemyTanks[index].boundingBox.X),
-				int32(enemyTanks[index].boundingBox.Y),
-				int32(enemyTanks[index].boundingBox.W),
-				int32(enemyTanks[index].boundingBox.H)}, float64(enemyTanks[index].rotationAngle), nil, sdl.FLIP_NONE)
+			DrawTexture(renderer, enemyTanks[index].tankTexture, &enemyTanks[index].boundingBox, enemyTanks[index].rotationAngle)
 		}
 		for index, _ := range enemyTankBullets {
-			renderer.CopyEx(enemyTankBullets[index].bulletTexture, nil, &sdl.Rect{
-				int32(enemyTankBullets[index].boundingBox.X),
-				int32(enemyTankBullets[index].boundingBox.Y),
-				int32(enemyTankBullets[index].boundingBox.W),
-				int32(enemyTankBullets[index].boundingBox.H)}, float64(enemyTankBullets[index].rotationAngle), nil, sdl.FLIP_NONE)
+			DrawTexture(renderer, enemyTankBullets[index].bulletTexture, &enemyTankBullets[index].boundingBox, enemyTankBullets[index].rotationAngle)
 		}
-		/* Just for debugging....
-		renderer.SetDrawColor(colornames.Red.R, colornames.Red.G, colornames.Red.B, colornames.Red.A)
-		for index, _ := range enemyTanks {
-			if enemyTanks[index].alive {
-				renderer.DrawRect(&sdl.Rect{
-					int32(enemyTanks[index].boundingBox.X),
-					int32(enemyTanks[index].boundingBox.Y),
-					int32(enemyTanks[index].boundingBox.W),
-					int32(enemyTanks[index].boundingBox.H),
-				})
-			}
-		}
-		renderer.DrawRect(&sdl.Rect{
-			int32(playerTank.boundingBox.X),
-			int32(playerTank.boundingBox.Y),
-			int32(playerTank.boundingBox.W),
-			int32(playerTank.boundingBox.H),
-		})*/
 		renderer.Present()
 
 		//==============UPDATING FPS COUNTER==============
@@ -419,5 +371,5 @@ func run() int {
 }
 
 func main() {
-	os.Exit(run()) // TODO : What does it do?
+	os.Exit(run())
 }
