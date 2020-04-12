@@ -52,5 +52,5 @@ I don't use it, BTW, you may contribute the steps....
 - If you want to build release binaries yourself, you may use the `release_script.sh` script to do that.
 - I do the development in a Linux distro, so to run this script, you need to be on a Linux distro.
 - I cross compile to get builds for other OS's. Make sure you have met [these](https://github.com/veandco/go-sdl2#cross-compiling) dependencies.
-- Run `sh release_script.sh` in the root directory of my project, after completition of this command, you will see the release builds, inside the `release` directory.
+- Run `sh release_script.sh <VERSION STRING>`(example: `sh release_script.sh v2.0.3`) in the root directory of my project, after completition of this command, you will see the release builds, inside the `release` directory.
 - You may also read [this](https://github.com/veandco/go-sdl2#static-compilation) to understand my release script.
