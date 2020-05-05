@@ -230,21 +230,27 @@ func run() int {
 		var bullet Bullet
 		var experimentalEnemyTank EnemyTank
 		for index, _ := range enemyTanks {
-			if enemyTanks[index].WillUpdate() {
-				switch r.Intn(2) {
+			
+			//==============UPDATING ANIMATION(ON EVERY FRAME)==============
+			enemyTanks[index].UpdateAnimation(dt)
+			
+			//==============UPDATING POSITION AND ROTATION, SHOOTING BULLETS==============
+			if enemyTanks[index].WillUpdate() { // updating based on an update timer
+				switch r.Intn(3) {
 				case 0:
 					experimentalEnemyTank = enemyTanks[index].MoveInRandomDir(dt, r)
 					if ValidPosition(experimentalEnemyTank.boundingBox, enemyTanks, playerTank.boundingBox) {
 						enemyTanks[index].boundingBox = experimentalEnemyTank.boundingBox
 					}
 				case 1:
-					experimentalEnemyTank, bullet = enemyTanks[index].SpinAndShoot(dt, r, sdl.FPoint{
+					enemyTanks[index].Rotate(r, sdl.FPoint{
 						X: playerTank.boundingBox.X,
 						Y: playerTank.boundingBox.Y,
-					}, bulletTexture, bulletImage.W, bulletImage.H)
+					})
+                case 2:
+                    bullet = enemyTanks[index].Shoot(bulletTexture, bulletImage.W, bulletImage.H)
 					enemyTankBullets = append(enemyTankBullets, bullet)
 					PlaySoundEffect(shootSoundEffect)
-					enemyTanks[index].rotationAngle = experimentalEnemyTank.rotationAngle
 				}
 			}
 		}

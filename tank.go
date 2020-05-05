@@ -51,6 +51,7 @@ type EnemyTank struct {
 	boundingBox   sdl.FRect
 	noUpdateTime  float32
 	timer         time.Time
+	rotationAnimationTargetAngle float32
 }
 
 func NewEnemyTank(tankTexture *sdl.Texture, width int32, height int32, initialRotationAngle float32, noUpdateTime float32) EnemyTank {
@@ -88,17 +89,23 @@ func (tank EnemyTank) MoveInRandomDir(delta float32, r *rand.Rand) EnemyTank {
 	return tank
 }
 
-func (tank EnemyTank) SpinAndShoot(delta float32, r *rand.Rand, playerTankPosition sdl.FPoint, bulletTexture *sdl.Texture, bulletWidth int32, bulletHeight int32) (EnemyTank, Bullet) {
+func (tank *EnemyTank) Rotate(r *rand.Rand, playerTankPosition sdl.FPoint) {
 	/*
 		TODO :
 		switch r.Intn(2) {
 		case 0:
 			displacementVector := playerTankPosition.Sub(tank.position) // SHOOT THE PLAYER
-			tank.rotationAngle = displacementVector.Angle()
+			tank.rotationAnimationTargetAngle = displacementVector.Angle()
 		case 1:*/
-	tank.rotationAngle = r.Float32() * 360.0 // SHOOT ANYWHERE RANDOMLY
+	tank.rotationAnimationTargetAngle = r.Float32() * 360.0 // SHOOT ANYWHERE RANDOMLY
 	/*}*/
-	return tank, Bullet{
+	if tank.rotationAngle >= 360.0 { // reset angle to 0, or else glitches/bugs are welcome...
+		tank.rotationAngle = 0.0
+	}
+}
+
+func (tank EnemyTank) Shoot(bulletTexture *sdl.Texture, bulletWidth int32, bulletHeight int32) Bullet {
+	return Bullet{
 		bulletTexture: bulletTexture,
 		velocity:      BULLET_VELOCITY,
 		boundingBox: sdl.FRect{
@@ -110,6 +117,12 @@ func (tank EnemyTank) SpinAndShoot(delta float32, r *rand.Rand, playerTankPositi
 			H: float32(bulletHeight),
 		},
 		rotationAngle: tank.rotationAngle,
+	}
+}
+
+func (tank *EnemyTank) UpdateAnimation(delta float32) {
+	if (tank.rotationAngle < tank.rotationAnimationTargetAngle) {
+		tank.rotationAngle += TANK_ROTATION_ANGLE * delta
 	}
 }
 
