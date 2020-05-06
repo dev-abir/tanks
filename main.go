@@ -43,7 +43,7 @@ const (
 
 //==============EXPLOSION ANIMATION==============
 const (
-	EXPLOSION_ANIMATION_TEXTURE_PATH string = "/home/zombie/tanks/resources/Tile.png"
+	EXPLOSION_ANIMATION_TEXTURE_PATH string = "resources/Tile.png"
 
 	// for now, these are hard coded(change these, if you change the texture image)
 	CELL_WIDTH                   int32 = 256
