@@ -1,14 +1,13 @@
 # tanks
 A simple tanks war game, written in [GO](https://golang.org/).
 
-> - I got the images from here:
-[tank image](https://opengameart.org/content/pixel-tank)
-[bullet imge](https://opengameart.org/content/bullet-symbol)
+## Source of the resources I used:
+- [tank image](https://opengameart.org/content/pixel-tank)
+- [bullet imge](https://opengameart.org/content/bullet-symbol)
+- [explosion animation sprite sheet](https://opengameart.org/content/sophisticated-explosion)
 > - (I forgot from where I got the sound effects, although I remember I used [this](https://opengameart.org) site to get the sound effects)
 > - The resources I used in this project are not original, I have edited some of them
 > - I used the [go-sdl2](https://godoc.org/github.com/veandco/go-sdl2) library here.
-
-Thanks in advance for contributing to my project :relaxed:
 
 ## The game:
 There will be a player tank(the green tank), and lots of enemy tanks(the red tanks).
@@ -54,3 +53,5 @@ I don't use it, BTW, you may contribute the steps....
 - I cross compile to get builds for other OS's. Make sure you have met [these](https://github.com/veandco/go-sdl2#cross-compiling) dependencies.
 - Run `sh release_script.sh <VERSION STRING>`(example: `sh release_script.sh v2.0.3`) in the root directory of my project, after completition of this command, you will see the release builds, inside the `release` directory.
 - You may also read [this](https://github.com/veandco/go-sdl2#static-compilation) to understand my release script.
+
+**Thanks in advance for contributing to my project :relaxed:**
