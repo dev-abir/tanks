@@ -29,10 +29,6 @@ callbacks need to be pointers, value receivers will 'bind' the function with the
 
 */
 
-type Drawable interface {
-	Draw(renderer *sdl.Renderer)
-}
-
 type Bullet struct {
 	bulletTexture *sdl.Texture
 	velocity      float32
@@ -45,12 +41,55 @@ func (bullet *Bullet) Update(delta float32) {
 	bullet.boundingBox.Y += bullet.velocity * delta * float32(math.Sin(DegreeToRadian(float64(bullet.rotationAngle))))
 }
 
+type Explosion struct {
+	position            sdl.Point
+	explosionTexture    *sdl.Texture
+	timer               time.Time
+	noUpdateTime        float32
+	animationCoordIndex int
+	died                bool
+}
+
+func NewExplosion(position sdl.Point, explosionTexture *sdl.Texture) Explosion {
+	return Explosion{
+		position:            position,
+		explosionTexture:    explosionTexture,
+		timer:               time.Now(),
+		noUpdateTime:        EXPLOSION_ANIMATION_LIFE_SPAN / float32(len(EXPLOSION_ANIMATION_COORDS)),
+		animationCoordIndex: 0,
+		died:                false,
+	}
+}
+
+func (explosion *Explosion) Update() {
+	if explosion.animationCoordIndex == (len(EXPLOSION_ANIMATION_COORDS) - 1) {
+		explosion.died = true
+	} else if time.Since(explosion.timer).Seconds() >= float64(explosion.noUpdateTime) {
+		explosion.timer = time.Now()
+		explosion.animationCoordIndex += 1
+	}
+}
+
+func (explosion Explosion) Draw(renderer *sdl.Renderer, tankWidth int32, tankHeight int32) {
+	renderer.Copy(explosion.explosionTexture,
+		&sdl.Rect{
+			EXPLOSION_ANIMATION_COORDS[explosion.animationCoordIndex].X,
+			EXPLOSION_ANIMATION_COORDS[explosion.animationCoordIndex].Y,
+			CELL_WIDTH,
+			CELL_HEIGHT},
+		&sdl.Rect{
+			explosion.position.X,
+			explosion.position.Y,
+			tankWidth,
+			tankHeight})
+}
+
 type EnemyTank struct {
-	tankTexture   *sdl.Texture
-	rotationAngle float32
-	boundingBox   sdl.FRect
-	noUpdateTime  float32
-	timer         time.Time
+	tankTexture                  *sdl.Texture
+	rotationAngle                float32
+	boundingBox                  sdl.FRect
+	noUpdateTime                 float32
+	timer                        time.Time
 	rotationAnimationTargetAngle float32
 }
 
@@ -121,7 +160,7 @@ func (tank EnemyTank) Shoot(bulletTexture *sdl.Texture, bulletWidth int32, bulle
 }
 
 func (tank *EnemyTank) UpdateAnimation(delta float32) {
-	if (tank.rotationAngle < tank.rotationAnimationTargetAngle) {
+	if tank.rotationAngle < tank.rotationAnimationTargetAngle {
 		tank.rotationAngle += TANK_ROTATION_ANGLE * delta
 	}
 }
@@ -134,15 +173,6 @@ func (tank *EnemyTank) WillUpdate() bool {
 		return true
 	}
 	return false
-}
-
-/*func (tank *EnemyTank) Die(delta float32) {
-	RemoveElementFromEnemyTankSlice(tank)
-	tank.tankDieAnimation(delta)
-}*/
-
-func (tank EnemyTank) tankDieAnimation(delta float32) {
-	// TODO
 }
 
 /*func (tank EnemyTank) Draw(window *sdl.Window) {

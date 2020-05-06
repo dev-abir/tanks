@@ -11,12 +11,21 @@ import (
 )
 
 func RemoveElementFromBulletSlice(slice []Bullet, index int) []Bullet {
+	// source : https://stackoverflow.com/a/37335777
 	// TODO : How to make it generic, i.e., it can remove an element from a slice of any kind
 	slice[index] = slice[len(slice)-1] // No bounds check = panic(on index out of bounds)
 	return slice[:len(slice)-1]
 }
 
 func RemoveElementFromEnemyTankSlice(slice []EnemyTank, index int) []EnemyTank {
+	// source : https://stackoverflow.com/a/37335777
+	// TODO : How to make it generic, i.e., it can remove an element from a slice of any kind
+	slice[index] = slice[len(slice)-1] // No bounds check = panic(on index out of bounds)
+	return slice[:len(slice)-1]
+}
+
+func RemoveElementFromExplosionSlice(slice []Explosion, index int) []Explosion {
+	// source : https://stackoverflow.com/a/37335777
 	// TODO : How to make it generic, i.e., it can remove an element from a slice of any kind
 	slice[index] = slice[len(slice)-1] // No bounds check = panic(on index out of bounds)
 	return slice[:len(slice)-1]

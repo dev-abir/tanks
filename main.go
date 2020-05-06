@@ -41,11 +41,35 @@ const (
 	EXPLOSION_SOUND_PATH string = "resources/bombexplosion.ogg"
 )
 
+//==============EXPLOSION ANIMATION==============
+const (
+	EXPLOSION_ANIMATION_TEXTURE_PATH string = "/home/zombie/tanks/resources/Tile.png"
+
+	// for now, these are hard coded(change these, if you change the texture image)
+	CELL_WIDTH                   int32 = 256
+	CELL_HEIGHT                  int32 = 256
+	NUMBER_OF_CELLS_LENGTH_WISE  int   = 8
+	NUMBER_OF_CELLS_BREADTH_WISE int   = 8
+)
+
+var EXPLOSION_ANIMATION_COORDS [NUMBER_OF_CELLS_LENGTH_WISE * NUMBER_OF_CELLS_BREADTH_WISE]sdl.Point = [NUMBER_OF_CELLS_LENGTH_WISE * NUMBER_OF_CELLS_BREADTH_WISE]sdl.Point{
+	sdl.Point{CELL_WIDTH * 0, CELL_HEIGHT * 0}, sdl.Point{CELL_WIDTH * 1, CELL_HEIGHT * 0}, sdl.Point{CELL_WIDTH * 2, CELL_HEIGHT * 0}, sdl.Point{CELL_WIDTH * 3, CELL_HEIGHT * 0}, sdl.Point{CELL_WIDTH * 4, CELL_HEIGHT * 0}, sdl.Point{CELL_WIDTH * 5, CELL_HEIGHT * 0}, sdl.Point{CELL_WIDTH * 6, CELL_HEIGHT * 0}, sdl.Point{CELL_WIDTH * 7, CELL_HEIGHT * 0},
+	sdl.Point{CELL_WIDTH * 0, CELL_HEIGHT * 1}, sdl.Point{CELL_WIDTH * 1, CELL_HEIGHT * 1}, sdl.Point{CELL_WIDTH * 2, CELL_HEIGHT * 1}, sdl.Point{CELL_WIDTH * 3, CELL_HEIGHT * 1}, sdl.Point{CELL_WIDTH * 4, CELL_HEIGHT * 1}, sdl.Point{CELL_WIDTH * 5, CELL_HEIGHT * 1}, sdl.Point{CELL_WIDTH * 6, CELL_HEIGHT * 1}, sdl.Point{CELL_WIDTH * 7, CELL_HEIGHT * 1},
+	sdl.Point{CELL_WIDTH * 0, CELL_HEIGHT * 2}, sdl.Point{CELL_WIDTH * 1, CELL_HEIGHT * 2}, sdl.Point{CELL_WIDTH * 2, CELL_HEIGHT * 2}, sdl.Point{CELL_WIDTH * 3, CELL_HEIGHT * 2}, sdl.Point{CELL_WIDTH * 4, CELL_HEIGHT * 2}, sdl.Point{CELL_WIDTH * 5, CELL_HEIGHT * 2}, sdl.Point{CELL_WIDTH * 6, CELL_HEIGHT * 2}, sdl.Point{CELL_WIDTH * 7, CELL_HEIGHT * 2},
+	sdl.Point{CELL_WIDTH * 0, CELL_HEIGHT * 3}, sdl.Point{CELL_WIDTH * 1, CELL_HEIGHT * 3}, sdl.Point{CELL_WIDTH * 2, CELL_HEIGHT * 3}, sdl.Point{CELL_WIDTH * 3, CELL_HEIGHT * 3}, sdl.Point{CELL_WIDTH * 4, CELL_HEIGHT * 3}, sdl.Point{CELL_WIDTH * 5, CELL_HEIGHT * 3}, sdl.Point{CELL_WIDTH * 6, CELL_HEIGHT * 3}, sdl.Point{CELL_WIDTH * 7, CELL_HEIGHT * 3},
+	sdl.Point{CELL_WIDTH * 0, CELL_HEIGHT * 4}, sdl.Point{CELL_WIDTH * 1, CELL_HEIGHT * 4}, sdl.Point{CELL_WIDTH * 2, CELL_HEIGHT * 4}, sdl.Point{CELL_WIDTH * 3, CELL_HEIGHT * 4}, sdl.Point{CELL_WIDTH * 4, CELL_HEIGHT * 4}, sdl.Point{CELL_WIDTH * 5, CELL_HEIGHT * 4}, sdl.Point{CELL_WIDTH * 6, CELL_HEIGHT * 4}, sdl.Point{CELL_WIDTH * 7, CELL_HEIGHT * 4},
+	sdl.Point{CELL_WIDTH * 0, CELL_HEIGHT * 5}, sdl.Point{CELL_WIDTH * 1, CELL_HEIGHT * 5}, sdl.Point{CELL_WIDTH * 2, CELL_HEIGHT * 5}, sdl.Point{CELL_WIDTH * 3, CELL_HEIGHT * 5}, sdl.Point{CELL_WIDTH * 4, CELL_HEIGHT * 5}, sdl.Point{CELL_WIDTH * 5, CELL_HEIGHT * 5}, sdl.Point{CELL_WIDTH * 6, CELL_HEIGHT * 5}, sdl.Point{CELL_WIDTH * 7, CELL_HEIGHT * 5},
+	sdl.Point{CELL_WIDTH * 0, CELL_HEIGHT * 6}, sdl.Point{CELL_WIDTH * 1, CELL_HEIGHT * 6}, sdl.Point{CELL_WIDTH * 2, CELL_HEIGHT * 6}, sdl.Point{CELL_WIDTH * 3, CELL_HEIGHT * 6}, sdl.Point{CELL_WIDTH * 4, CELL_HEIGHT * 6}, sdl.Point{CELL_WIDTH * 5, CELL_HEIGHT * 6}, sdl.Point{CELL_WIDTH * 6, CELL_HEIGHT * 6}, sdl.Point{CELL_WIDTH * 7, CELL_HEIGHT * 6},
+	sdl.Point{CELL_WIDTH * 0, CELL_HEIGHT * 7}, sdl.Point{CELL_WIDTH * 1, CELL_HEIGHT * 7}, sdl.Point{CELL_WIDTH * 2, CELL_HEIGHT * 7}, sdl.Point{CELL_WIDTH * 3, CELL_HEIGHT * 7}, sdl.Point{CELL_WIDTH * 4, CELL_HEIGHT * 7}, sdl.Point{CELL_WIDTH * 5, CELL_HEIGHT * 7}, sdl.Point{CELL_WIDTH * 6, CELL_HEIGHT * 7}, sdl.Point{CELL_WIDTH * 7, CELL_HEIGHT * 7},
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const (
 	//==============GAMEPLAY==============
-	BULLET_VELOCITY      float32 = 500
-	TANK_ROTATION_ANGLE  float32 = 500 // TODO : Why so low rotation on setting this to 5?(maybe due to delta calculation)
-	PLAYER_TANK_VELOCITY float32 = 300
+	BULLET_VELOCITY               float32 = 500
+	TANK_ROTATION_ANGLE           float32 = 500 // TODO : Why so low rotation on setting this to 5?(maybe due to delta calculation)
+	PLAYER_TANK_VELOCITY          float32 = 300
+	EXPLOSION_ANIMATION_LIFE_SPAN float32 = 0.5 // seconds
 
 	//==============SPECIAL FLAGS==============
 	CRAZY_TANKS bool = false // A special flag, toggle it, and enjoy!
@@ -185,6 +209,15 @@ func run() int {
 	defer bulletImage.Free()
 	defer bulletTexture.Destroy()
 
+	//==============EXPLOSION ANIMATION==============
+	var explosions []Explosion
+	explosionImage, explosionTexture, errorCode := GetTexture(EXPLOSION_ANIMATION_TEXTURE_PATH, renderer)
+	if errorCode != 0 {
+		return errorCode
+	}
+	defer explosionImage.Free()
+	defer explosionTexture.Destroy()
+
 	//==============MAIN LOOP==============
 	keyboardState := sdl.GetKeyboardState() // for handling keyboard events
 	running := true                         // Main loop flag
@@ -230,10 +263,10 @@ func run() int {
 		var bullet Bullet
 		var experimentalEnemyTank EnemyTank
 		for index, _ := range enemyTanks {
-			
+
 			//==============UPDATING ANIMATION(ON EVERY FRAME)==============
 			enemyTanks[index].UpdateAnimation(dt)
-			
+
 			//==============UPDATING POSITION AND ROTATION, SHOOTING BULLETS==============
 			if enemyTanks[index].WillUpdate() { // updating based on an update timer
 				switch r.Intn(3) {
@@ -247,8 +280,8 @@ func run() int {
 						X: playerTank.boundingBox.X,
 						Y: playerTank.boundingBox.Y,
 					})
-                case 2:
-                    bullet = enemyTanks[index].Shoot(bulletTexture, bulletImage.W, bulletImage.H)
+				case 2:
+					bullet = enemyTanks[index].Shoot(bulletTexture, bulletImage.W, bulletImage.H)
 					enemyTankBullets = append(enemyTankBullets, bullet)
 					PlaySoundEffect(shootSoundEffect)
 				}
@@ -341,11 +374,23 @@ func run() int {
 					playerTankBullets[index].boundingBox.Y + (playerTankBullets[index].boundingBox.H / 2.0),
 				}
 				if bulletNosePosition.InRect(&enemyTanks[i].boundingBox) {
+					explosions = append(explosions, NewExplosion(sdl.Point{int32(enemyTanks[i].boundingBox.X), int32(enemyTanks[i].boundingBox.Y)}, explosionTexture))
 					enemyTanks = RemoveElementFromEnemyTankSlice(enemyTanks, i)
 					PlaySoundEffect(explosionSoundEffect)
-
 				}
 			}
+		}
+
+		//==============REMOVING DIED EXPLOSION ANIMATIONS==============
+		for i := 0; i < len(explosions); i++ {
+			if explosions[i].died {
+				explosions = RemoveElementFromExplosionSlice(explosions, i)
+			}
+		}
+
+		//==============UPDATING EXPLOSION ANIMATIONS==============
+		for index, _ := range explosions {
+			explosions[index].Update()
 		}
 
 		// TODO : Update first, or draw first?(most probably update first) + update order
@@ -354,8 +399,12 @@ func run() int {
 		//==============CLEARING THE SCREEN==============
 		renderer.SetDrawColor(colornames.Bisque.R, colornames.Bisque.G, colornames.Bisque.B, colornames.Bisque.A)
 		renderer.Clear()
+		renderer.SetDrawColor(colornames.Red.R, colornames.Red.G, colornames.Red.B, colornames.Red.A)
 
 		//==============DRAWING==============
+		for index, _ := range explosions {
+			explosions[index].Draw(renderer, enemyTankImage.W, enemyTankImage.H)
+		}
 		DrawTexture(renderer, playerTank.tankTexture, &playerTank.boundingBox, playerTank.rotationAngle)
 		for index, _ := range playerTankBullets {
 			DrawTexture(renderer, playerTankBullets[index].bulletTexture, &playerTankBullets[index].boundingBox, playerTankBullets[index].rotationAngle)
