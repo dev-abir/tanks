@@ -50,9 +50,12 @@ type Explosion struct {
 	died                bool
 }
 
-func NewExplosion(position sdl.Point, explosionTexture *sdl.Texture) Explosion {
+func NewExplosion(tankBoundingBox sdl.FRect, explosionTexture *sdl.Texture) Explosion {
 	return Explosion{
-		position:            position,
+		position: sdl.Point{
+			int32(tankBoundingBox.X) - ((CELL_WIDTH - int32(tankBoundingBox.W)) / 2),
+			int32(tankBoundingBox.Y) - ((CELL_HEIGHT - int32(tankBoundingBox.H)) / 2),
+		}, // positioning exactly at the centre of the tank
 		explosionTexture:    explosionTexture,
 		timer:               time.Now(),
 		noUpdateTime:        EXPLOSION_ANIMATION_LIFE_SPAN / float32(len(EXPLOSION_ANIMATION_COORDS)),
@@ -70,7 +73,7 @@ func (explosion *Explosion) Update() {
 	}
 }
 
-func (explosion Explosion) Draw(renderer *sdl.Renderer, tankWidth int32, tankHeight int32) {
+func (explosion Explosion) Draw(renderer *sdl.Renderer) {
 	renderer.Copy(explosion.explosionTexture,
 		&sdl.Rect{
 			EXPLOSION_ANIMATION_COORDS[explosion.animationCoordIndex].X,
@@ -80,8 +83,8 @@ func (explosion Explosion) Draw(renderer *sdl.Renderer, tankWidth int32, tankHei
 		&sdl.Rect{
 			explosion.position.X,
 			explosion.position.Y,
-			tankWidth,
-			tankHeight})
+			CELL_WIDTH,
+			CELL_WIDTH})
 }
 
 type EnemyTank struct {

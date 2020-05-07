@@ -43,11 +43,11 @@ const (
 
 //==============EXPLOSION ANIMATION==============
 const (
-	EXPLOSION_ANIMATION_TEXTURE_PATH string = "resources/Tile.png"
+	EXPLOSION_ANIMATION_TEXTURE_PATH string = "resources/explosion_animation.png"
 
 	// for now, these are hard coded(change these, if you change the texture image)
-	CELL_WIDTH                   int32 = 256
-	CELL_HEIGHT                  int32 = 256
+	CELL_WIDTH                   int32 = 128
+	CELL_HEIGHT                  int32 = 128
 	NUMBER_OF_CELLS_LENGTH_WISE  int   = 8
 	NUMBER_OF_CELLS_BREADTH_WISE int   = 8
 )
@@ -374,7 +374,7 @@ func run() int {
 					playerTankBullets[index].boundingBox.Y + (playerTankBullets[index].boundingBox.H / 2.0),
 				}
 				if bulletNosePosition.InRect(&enemyTanks[i].boundingBox) {
-					explosions = append(explosions, NewExplosion(sdl.Point{int32(enemyTanks[i].boundingBox.X), int32(enemyTanks[i].boundingBox.Y)}, explosionTexture))
+					explosions = append(explosions, NewExplosion(enemyTanks[i].boundingBox, explosionTexture))
 					enemyTanks = RemoveElementFromEnemyTankSlice(enemyTanks, i)
 					PlaySoundEffect(explosionSoundEffect)
 				}
@@ -403,7 +403,7 @@ func run() int {
 
 		//==============DRAWING==============
 		for index, _ := range explosions {
-			explosions[index].Draw(renderer, enemyTankImage.W, enemyTankImage.H)
+			explosions[index].Draw(renderer)
 		}
 		DrawTexture(renderer, playerTank.tankTexture, &playerTank.boundingBox, playerTank.rotationAngle)
 		for index, _ := range playerTankBullets {
