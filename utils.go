@@ -83,7 +83,7 @@ func DrawTexture(renderer *sdl.Renderer, texture *sdl.Texture, boundingBox *sdl.
 }
 
 func SetPositionOfEnemyTanks(enemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect, r *rand.Rand) {
-	for index, _ := range enemyTanks {
+	for index := range enemyTanks {
 		enemyTanks[index].boundingBox = GetPositionOfOneEnemyTank(enemyTanks[index].boundingBox, enemyTanks[:index], playerTankBoundingBox, r)
 	}
 }
@@ -102,7 +102,7 @@ func GetPositionOfOneEnemyTank(enemyTankBoundingBox sdl.FRect, otherEnemyTanks [
 }
 
 func ValidPosition(experimentalTankBoundingBox sdl.FRect, otherEnemyTanks []EnemyTank, playerTankBoundingBox sdl.FRect) bool {
-	for idx, _ := range otherEnemyTanks {
+	for idx := range otherEnemyTanks {
 		if experimentalTankBoundingBox.HasIntersection(&otherEnemyTanks[idx].boundingBox) {
 			return false
 		}

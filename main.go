@@ -262,7 +262,7 @@ func run() int {
 		//==============UPDATING ENEMY TANKS==============
 		var bullet Bullet
 		var experimentalEnemyTank EnemyTank
-		for index, _ := range enemyTanks {
+		for index := range enemyTanks {
 
 			//==============UPDATING ANIMATION(ON EVERY FRAME)==============
 			enemyTanks[index].UpdateAnimation(dt)
@@ -289,7 +289,7 @@ func run() int {
 		}
 
 		//==============UPDATING ENEMY TANK BULLETS==============
-		for index, _ := range enemyTankBullets {
+		for index := range enemyTankBullets {
 			enemyTankBullets[index].Update(dt)
 		}
 
@@ -342,7 +342,7 @@ func run() int {
 				intersect := false
 				experimentalPlayerTank := callbackFunc(dt)
 				// collision detection with enemy tanks and window
-				for index, _ := range enemyTanks {
+				for index := range enemyTanks {
 					if enemyTanks[index].boundingBox.HasIntersection(&experimentalPlayerTank.boundingBox) {
 						intersect = true
 						break
@@ -362,12 +362,12 @@ func run() int {
 		}
 
 		//==============UPDATING PLAYER TANK BULLETS==============
-		for index, _ := range playerTankBullets {
+		for index := range playerTankBullets {
 			playerTankBullets[index].Update(dt)
 		}
 
 		//==============DESTROYING ENEMY TANKS(by player tank bullets)==============
-		for index, _ := range playerTankBullets {
+		for index := range playerTankBullets {
 			for i := 0; i < len(enemyTanks); i++ {
 				bulletNosePosition := sdl.FPoint{
 					playerTankBullets[index].boundingBox.X + playerTankBullets[index].boundingBox.W,
@@ -389,7 +389,7 @@ func run() int {
 		}
 
 		//==============UPDATING EXPLOSION ANIMATIONS==============
-		for index, _ := range explosions {
+		for index := range explosions {
 			explosions[index].Update()
 		}
 
@@ -402,17 +402,17 @@ func run() int {
 		renderer.SetDrawColor(colornames.Red.R, colornames.Red.G, colornames.Red.B, colornames.Red.A)
 
 		//==============DRAWING==============
-		for index, _ := range explosions {
+		for index := range explosions {
 			explosions[index].Draw(renderer)
 		}
 		DrawTexture(renderer, playerTank.tankTexture, &playerTank.boundingBox, playerTank.rotationAngle)
-		for index, _ := range playerTankBullets {
+		for index := range playerTankBullets {
 			DrawTexture(renderer, playerTankBullets[index].bulletTexture, &playerTankBullets[index].boundingBox, playerTankBullets[index].rotationAngle)
 		}
-		for index, _ := range enemyTanks {
+		for index := range enemyTanks {
 			DrawTexture(renderer, enemyTanks[index].tankTexture, &enemyTanks[index].boundingBox, enemyTanks[index].rotationAngle)
 		}
-		for index, _ := range enemyTankBullets {
+		for index := range enemyTankBullets {
 			DrawTexture(renderer, enemyTankBullets[index].bulletTexture, &enemyTankBullets[index].boundingBox, enemyTankBullets[index].rotationAngle)
 		}
 		renderer.Present()
