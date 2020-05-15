@@ -20,7 +20,7 @@ const (
 	SCREEN_WIDTH    int32  = 500
 	SCREEN_HEIGHT   int32  = 500
 	VSYNC           bool   = true
-	SMOOTH_TEXTURES bool   = false
+	SMOOTH_TEXTURES bool   = true
 )
 
 const (
