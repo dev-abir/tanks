@@ -2,7 +2,8 @@
 A simple tanks war game, written in [GO](https://golang.org/).
 
 ## Source of the resources I used:
-- [tank image](https://opengameart.org/content/pixel-tank)
+- [tank image](https://github.com/dev-dtech)(from a github user)
+- ~~[**OLD** tank image](https://opengameart.org/content/pixel-tank)~~
 - [bullet imge](https://opengameart.org/content/bullet-symbol)
 - [explosion animation sprite sheet](https://opengameart.org/content/sophisticated-explosion)
 > - (I forgot from where I got the sound effects, although I remember I used [this](https://opengameart.org) site to get the sound effects)
